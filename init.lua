@@ -52,14 +52,14 @@ function Threads:__call(N, ...)
          local code_p, sz = serialize.save(funcs[j])
          if j < #funcs then
             checkL(L, C.luaL_loadstring(L, string.format([[
-              local serialize = require 'serialize'
+              local serialize = require 'threads.serialize'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
               code()
             ]], tonumber(ffi.cast('intptr_t', code_p)), sz)))
          else
             checkL(L, C.luaL_loadstring(L, string.format([[
-              local serialize = require 'serialize'
+              local serialize = require 'threads.serialize'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
               __workerinitres_p, __workerinitres_sz = serialize.save{code()}
@@ -79,7 +79,7 @@ function Threads:__call(N, ...)
       checkL(L, C.luaL_loadstring(L, [[
   local ffi = require 'ffi'
   local sdl = require 'sdl2'
-  require 'worker'
+  require 'threads.worker'
   
   local function workerloop(data)
      local workers = ffi.cast('struct THWorker**', data)
