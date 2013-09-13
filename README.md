@@ -63,14 +63,14 @@ sdl.init(0)
 -- the function takes several callbacks as input, which will be executed
 -- sequentially on each newly created lua state
 local threads = Threads(nthread,
-                        -- typically the first callback requires module
-                        -- necessary to serialize the second callback
+                        -- typically the first callback requires modules
+                        -- necessary to serialize other callbacks
                         function()
                            gsdl = require 'sdl2'
                         end,
 
-                        -- other callbacks prepare stuff you need
-                        -- to run your program
+                        -- other callbacks (one is enough in general!) prepare stuff
+                        -- you need to run your program
                         function()
                            print('starting a new thread/state')
                            gmsg = msg -- we copy here an upvalue of the main thread
@@ -109,4 +109,34 @@ print(string.format('%d jobs done', jobdone))
 
 -- terminate threads
 threads:terminate()
+```
+
+Typical output:
+
+```sh
+starting a new thread/state
+starting a new thread/state
+starting a new thread/state
+starting a new thread/state
+hello from a satellite thread -- thread ID is cd24000
+hello from a satellite thread -- thread ID is cec8000
+hello from a satellite thread -- thread ID is d06c000
+hello from a satellite thread -- thread ID is cd24000
+task 1 finished (ran on thread ID cd24000)
+hello from a satellite thread -- thread ID is d210000
+task 2 finished (ran on thread ID cec8000)
+task 3 finished (ran on thread ID d06c000)
+task 4 finished (ran on thread ID cd24000)
+task 5 finished (ran on thread ID d210000)
+hello from a satellite thread -- thread ID is cec8000
+hello from a satellite thread -- thread ID is d06c000
+hello from a satellite thread -- thread ID is cd24000
+task 6 finished (ran on thread ID cec8000)
+hello from a satellite thread -- thread ID is d210000
+hello from a satellite thread -- thread ID is cec8000
+task 7 finished (ran on thread ID d06c000)
+task 8 finished (ran on thread ID cd24000)
+task 9 finished (ran on thread ID d210000)
+task 10 finished (ran on thread ID cec8000)
+10 jobs done
 ```
