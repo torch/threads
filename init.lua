@@ -1,8 +1,8 @@
 local ffi = require 'ffi'
 local sdl = require 'sdl2'
-local Worker = require 'worker'
+local Worker = require 'threads.worker'
 local C = ffi.C
-local serialize = require 'serialize'
+local serialize = require 'threads.serialize'
 
 ffi.cdef[[
 typedef struct lua_State lua_State;

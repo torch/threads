@@ -1,7 +1,7 @@
 local sdl = require 'sdl2'
 local ffi = require 'ffi'
 local C = ffi.C
-local serialize = require 'serialize'
+local serialize = require 'threads.serialize'
 
 ffi.cdef[[
 
