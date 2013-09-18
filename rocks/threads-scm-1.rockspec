@@ -26,7 +26,7 @@ build = {
    type = "builtin",
    modules = {
       ["threads.init"] = "init.lua",
-      ["threads.cdefs"] = "worker.lua",
-      ["threads.defines"] = "serialize.lua"
+      ["threads.worker"] = "worker.lua",
+      ["threads.serialize"] = "serialize.lua"
    }      
 }
