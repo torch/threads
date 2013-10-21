@@ -2,7 +2,7 @@ package = "threads"
 version = "scm-1"
 
 source = {
-   url = "git://github.com/andresy/threads-ffi.git"
+   url = "git://github.com/torch/threads-ffi.git"
 }
 
 description = {
@@ -12,7 +12,7 @@ A LuaJIT-based theading system. Relies on SDL2 threads for
 portability. Transparent exchange of data between threads is allowed thanks
 to torch serialization.
    ]],
-   homepage = "https://github.com/andresy/threads-ffi",
+   homepage = "https://github.com/torch/threads-ffi",
    license = "BSD"
 }
 
