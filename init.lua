@@ -55,16 +55,16 @@ function Threads:__call(N, ...)
               local serialize = require 'threads.serialize'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
-              code()
-            ]], tonumber(ffi.cast('intptr_t', code_p)), sz)))
+              code(%d)
+            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i)))
          else
             checkL(L, C.luaL_loadstring(L, string.format([[
               local serialize = require 'threads.serialize'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
-              __workerinitres_p, __workerinitres_sz = serialize.save{code()}
+              __workerinitres_p, __workerinitres_sz = serialize.save{code(%d)}
               __workerinitres_p = tonumber(ffi.cast('intptr_t', __workerinitres_p))
-            ]], tonumber(ffi.cast('intptr_t', code_p)), sz)))
+            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i)))
          end
          checkL(L, C.lua_pcall(L, 0, 0, 0) == 0)
       end
