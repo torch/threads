@@ -138,3 +138,8 @@ task 9 finished (ran on thread ID d210000)
 task 10 finished (ran on thread ID cec8000)
 10 jobs done
 ```
+
+# Advanced Example #
+
+See a neural network [threaded training example](benchmark/README.md) for a
+more advanced usage of `threads`.
