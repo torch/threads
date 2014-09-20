@@ -36,8 +36,8 @@ dependency should be minor too.
 
 At this time, if you have torch7 installed:
 ```sh
-torch-rocks install https://raw.github.com/torch/sdl2-ffi/master/rocks/sdl2-scm-1.rockspec
-torch-rocks install https://raw.github.com/torch/threads-ffi/master/rocks/threads-scm-1.rockspec
+luarocks install https://raw.github.com/torch/sdl2-ffi/master/rocks/sdl2-scm-1.rockspec
+luarocks install https://raw.github.com/torch/threads-ffi/master/rocks/threads-scm-1.rockspec
 ```
 
 # Example Usage #
