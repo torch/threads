@@ -69,8 +69,8 @@ local threads = Threads(nthread,
 
                         -- other callbacks (one is enough in general!) prepare stuff
                         -- you need to run your program
-                        function()
-                           print('starting a new thread/state')
+                        function(idx)
+                           print('starting a new thread/state number:', idx)
                            gmsg = msg -- we copy here an upvalue of the main thread
                         end)
 
