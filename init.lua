@@ -33,7 +33,7 @@ local function checkL(L, status)
 end
 
 function Threads:__call(N, ...)
-   local self = {N=N, endcallbacks={}}
+   local self = {N=N, endcallbacks={n=0}}
    local funcs = {...}
    local initres = {}
 
@@ -130,6 +130,7 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
       endcallbackid = endcallbackid + 1
    end
    endcallbacks[endcallbackid] = endcallback or function() end
+   endcallbacks.n = endcallbacks.n + 1
 --   print('ID', endcallbackid)
    
    local func = function(...)
@@ -141,9 +142,11 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
 end
 
 function Threads:synchronize()
-   while self.mainworker.runningjobs > 0 or self.threadworker.runningjobs > 0 do
+
+   while self.mainworker.runningjobs > 0 or self.threadworker.runningjobs > 0 or self.endcallbacks.n > 0 do
       self.mainworker:dojob(self.endcallbacks)
    end
+
 end
 
 function Threads:terminate()

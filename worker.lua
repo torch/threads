@@ -71,7 +71,6 @@ local mt = {
                worker.isempty = 1
             end
             worker.isfull = 0
-
             sdl.unlockMutex(worker.mutex)
             sdl.condSignal(worker.notfull)
 
@@ -80,6 +79,7 @@ local mt = {
                local id = callback()
                res = {(joblist[id])(unpack(args))}
                joblist[id] = nil
+               joblist.n = joblist.n - 1
             else
                res = {callback(unpack(args))} -- note: args is a table for sure
             end
