@@ -33,7 +33,7 @@ local function checkL(L, status)
 end
 
 function Threads:__call(N, ...)
-   local self = {N=N, endcallbacks={n=0}}
+   local self = {N=N, endcallbacks={n=0}, errors={}}
    local funcs = {...}
    local initres = {}
 
@@ -62,9 +62,10 @@ function Threads:__call(N, ...)
               local serialize = require 'threads.serialize'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
+              __threadid = %d
               __workerinitres_p, __workerinitres_sz = serialize.save{code(%d)}
               __workerinitres_p = tonumber(ffi.cast('intptr_t', __workerinitres_p))
-            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i)))
+            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i, i)))
          end
          checkL(L, C.lua_pcall(L, 0, 0, 0) == 0)
       end
@@ -85,13 +86,12 @@ function Threads:__call(N, ...)
      local workers = ffi.cast('struct THWorker**', data)
      local mainworker = workers[0]
      local threadworker = workers[1]
+     local threadid = __threadid
 
      while __worker_running do
-        -- DEBUG... faudrait peut-etre un pcall() ici
-        -- si ca chie, renvoie un id special (genre 0) avec le msg d'erreur dans res!!
-        local res, endcallbackid = threadworker:dojob()
+        local status, res, endcallbackid = threadworker:dojob()
         mainworker:addjob(function()
-                             return res, endcallbackid
+                             return status, res, endcallbackid, threadid
                           end)
      end
 
@@ -118,8 +118,15 @@ end
 
 function Threads:dojob()
    local endcallbacks = self.endcallbacks
-   local args, endcallbackid = self.mainworker:dojob()
-   local res = endcallbacks[endcallbackid](unpack(args))
+   local callstatus, args, endcallbackid, threadid = self.mainworker:dojob()
+   if callstatus then
+      local endcallstatus, msg = pcall(endcallbacks[endcallbackid], unpack(args))
+      if not endcallstatus then
+         table.insert(self.errors, string.format('[thread %d endcallback] %s', threadid, msg))
+      end
+   else
+      table.insert(self.errors, string.format('[thread %d callback] %s', threadid, args[1]))
+   end
    endcallbacks[endcallbackid] = nil
    endcallbacks.n = endcallbacks.n - 1
 end
@@ -142,9 +149,10 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
 --   print('ID', endcallbackid)
    
    local func = function(...)
-                   local res = {callback(...)}
-                   return res, endcallbackid
-                end
+      local res = {pcall(callback, ...)}
+      local status = table.remove(res, 1)
+      return status, res, endcallbackid
+   end
 
    self.threadworker:addjob(func, ...)
 end
@@ -155,6 +163,11 @@ function Threads:synchronize()
       self:dojob()
    end
 
+   if #self.errors > 0 then
+      local msg = string.format('\n%s', table.concat(self.errors, '\n'))
+      self.errors = {}
+      error(msg)
+   end
 end
 
 function Threads:terminate()
@@ -172,7 +185,6 @@ function Threads:terminate()
    local pvalue = ffi.new('int[1]')
    for i=1,self.N do
       sdl.waitThread(self.threads[i].thread, pvalue)
---      print(string.format('thread %d returned value: %d', i, pvalue[0]))
       C.lua_close(self.threads[i].L)
    end
 end
