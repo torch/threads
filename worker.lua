@@ -55,7 +55,7 @@ local mt = {
          end,
 
       dojob =
-         function(worker, joblist)
+         function(worker)
             sdl.lockMutex(worker.mutex)
             while worker.isempty == 1 do
                sdl.condWait(worker.notempty, worker.mutex)
@@ -74,15 +74,7 @@ local mt = {
             sdl.unlockMutex(worker.mutex)
             sdl.condSignal(worker.notfull)
 
-            local res
-            if joblist then
-               local id = callback()
-               res = {(joblist[id])(unpack(args))}
-               joblist[id] = nil
-               joblist.n = joblist.n - 1
-            else
-               res = {callback(unpack(args))} -- note: args is a table for sure
-            end
+            local res = {callback(unpack(args))} -- note: args is a table for sure
 
             sdl.lockMutex(worker.mutex)
             worker.runningjobs = worker.runningjobs - 1

@@ -91,8 +91,8 @@ function Threads:__call(N, ...)
         -- si ca chie, renvoie un id special (genre 0) avec le msg d'erreur dans res!!
         local res, endcallbackid = threadworker:dojob()
         mainworker:addjob(function()
-                             return endcallbackid
-                          end, unpack(res))
+                             return res, endcallbackid
+                          end)
      end
 
      return 0
@@ -116,12 +116,20 @@ function Threads:__call(N, ...)
    return self, initres
 end
 
+function Threads:dojob()
+   local endcallbacks = self.endcallbacks
+   local args, endcallbackid = self.mainworker:dojob()
+   local res = endcallbacks[endcallbackid](unpack(args))
+   endcallbacks[endcallbackid] = nil
+   endcallbacks.n = endcallbacks.n - 1
+end
+
 function Threads:addjob(callback, endcallback, ...) -- endcallback is passed with returned values of callback
    local endcallbacks = self.endcallbacks
 
    -- first finish running jobs if any
    while self.mainworker.isempty ~= 1 do
-      self.mainworker:dojob(endcallbacks)
+      self:dojob()
    end
 
    -- now add a new endcallback in the list
@@ -144,7 +152,7 @@ end
 function Threads:synchronize()
 
    while self.mainworker.runningjobs > 0 or self.threadworker.runningjobs > 0 or self.endcallbacks.n > 0 do
-      self.mainworker:dojob(self.endcallbacks)
+      self:dojob()
    end
 
 end
