@@ -140,13 +140,9 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
    end
 
    -- now add a new endcallback in the list
-   local endcallbackid = 1
-   while endcallbacks[endcallbackid] do
-      endcallbackid = endcallbackid + 1
-   end
+   local endcallbackid = table.getn(endcallbacks)+1
    endcallbacks[endcallbackid] = endcallback or function() end
    endcallbacks.n = endcallbacks.n + 1
---   print('ID', endcallbackid)
    
    local func = function(...)
       local res = {pcall(callback, ...)}
