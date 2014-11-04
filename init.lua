@@ -41,7 +41,7 @@ function Threads:__call(N, ...)
 
    self.mainworker = Worker(N)
    self.threadworker = Worker(N)
-   
+
    self.threads = {}
    for i=1,N do
       local L = C.luaL_newstate()
@@ -81,7 +81,7 @@ function Threads:__call(N, ...)
   local ffi = require 'ffi'
   local sdl = require 'sdl2'
   require 'threads.worker'
-  
+
   local function workerloop(data)
      local workers = ffi.cast('struct THWorker**', data)
      local mainworker = workers[0]
@@ -132,6 +132,7 @@ function Threads:dojob()
 end
 
 function Threads:addjob(callback, endcallback, ...) -- endcallback is passed with returned values of callback
+   if #self.errors > 0 then self:synchronize() end -- if errors exist, sync immediately.
    local endcallbacks = self.endcallbacks
 
    -- first finish running jobs if any
@@ -143,7 +144,7 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
    local endcallbackid = table.getn(endcallbacks)+1
    endcallbacks[endcallbackid] = endcallback or function() end
    endcallbacks.n = endcallbacks.n + 1
-   
+
    local func = function(...)
       local res = {pcall(callback, ...)}
       local status = table.remove(res, 1)
