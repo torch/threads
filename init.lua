@@ -21,7 +21,7 @@ typedef struct lua_State lua_State;
 
 local LUA_GLOBALSINDEX = -10002;
 
-local Threads = {__index=Threads, name="worker"}
+local Threads = {name="worker"}
 
 setmetatable(Threads, Threads)
 
@@ -35,6 +35,11 @@ end
 function Threads:__call(N, ...)
    local self = {N=N, endcallbacks={n=0}, errors={}}
    local funcs = {...}
+   
+   if #funcs == 0 then
+      funcs = {function() end}
+   end
+   
    local initres = {}
 
    setmetatable(self, {__index=Threads})
