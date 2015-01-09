@@ -92,7 +92,7 @@ local mt = {
 
 local __Worker = ffi.metatype("struct THWorker", mt)
 
-local function Worker(N, callbackWorker)
+local function Worker(N)
    local worker = __Worker()
    worker.mutex = sdl.createMutex()
    worker.notfull = sdl.createCond()
