@@ -141,7 +141,7 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
    local endcallbacks = self.endcallbacks
 
    -- first finish running jobs if any
-   while self.mainworker.isempty ~= 1 do
+   while self.endcallbacks.n > self.N do
       self:dojob()
    end
 
