@@ -136,13 +136,19 @@ function Threads:dojob()
    endcallbacks.n = endcallbacks.n - 1
 end
 
-function Threads:addjob(callback, endcallback, ...) -- endcallback is passed with returned values of callback
+function Threads:acceptsjob()
+   return self.threadworker.isfull ~= 1
+end
+
+function Threads:__addjob__(sync, callback, endcallback, ...) -- endcallback is passed with returned values of callback
    if #self.errors > 0 then self:synchronize() end -- if errors exist, sync immediately.
    local endcallbacks = self.endcallbacks
 
    -- first finish running jobs if any
-   while self.endcallbacks.n > self.N do
-      self:dojob()
+   if sync then
+      while not self:acceptsjob() do
+         self:dojob()
+      end
    end
 
    -- now add a new endcallback in the list
@@ -157,6 +163,14 @@ function Threads:addjob(callback, endcallback, ...) -- endcallback is passed wit
    end
 
    self.threadworker:addjob(func, ...)
+end
+
+function Threads:addjob(callback, endcallback, ...)
+   self:__addjob__(true, callback, endcallback, ...)
+end
+
+function Threads:addjobasync(callback, endcallback, ...)
+   self:__addjob__(false, callback, endcallback, ...)
 end
 
 function Threads:synchronize()
