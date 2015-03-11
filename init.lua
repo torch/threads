@@ -118,6 +118,12 @@ function Threads:__call(N, ...)
       table.insert(self.threads, {thread=thread, L=L})
    end
 
+   self.__gc__ = newproxy(true)
+   getmetatable(self.__gc__).__gc =
+     function()
+         self:synchronize()
+     end
+
    return self, initres
 end
 
