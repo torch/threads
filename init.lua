@@ -179,13 +179,19 @@ function Threads:addjobasync(callback, endcallback, ...)
    self:__addjob__(false, callback, endcallback, ...)
 end
 
-function Threads:synchronize()
+function Threads:haserror()
+   return (#self.errors > 0)
+end
 
-   while self.mainworker.runningjobs > 0 or self.threadworker.runningjobs > 0 or self.endcallbacks.n > 0 do
+function Threads:hasjob()
+   return (self.mainworker.runningjobs > 0 or self.threadworker.runningjobs > 0 or self.endcallbacks.n > 0)
+end
+
+function Threads:synchronize()
+   while self:hasjob()do
       self:dojob()
    end
-
-   if #self.errors > 0 then
+   if self:haserror() then
       local msg = string.format('\n%s', table.concat(self.errors, '\n'))
       self.errors = {}
       error(msg)
