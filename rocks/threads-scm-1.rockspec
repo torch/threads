@@ -27,6 +27,7 @@ build = {
    modules = {
       ["threads.init"] = "init.lua",
       ["threads.worker"] = "worker.lua",
-      ["threads.serialize"] = "serialize.lua"
+      ["threads.serialize"] = "serialize.lua",
+      ["threads.sharedserialize"] = "sharedserialize.lua"
    }      
 }
