@@ -1,7 +1,6 @@
 local sdl = require 'sdl2'
 local ffi = require 'ffi'
 local C = ffi.C
-local serialize = require 'threads.serialize'
 
 ffi.cdef[[
 
@@ -20,6 +19,7 @@ struct THWorker {
   int isfull;
   int runningjobs;
   int maxjobs;
+  char* serialize;
 
   struct THCode *callbacks;
   struct THCode *args;
@@ -30,6 +30,8 @@ local mt = {
    __index = {
       addjob =
          function(worker, callback, ...)
+            local serialize = require(ffi.string(worker.serialize))
+
             sdl.lockMutex(worker.mutex)
             while worker.isfull == 1 do
                sdl.condWait(worker.notfull, worker.mutex)
@@ -56,6 +58,8 @@ local mt = {
 
       dojob =
          function(worker)
+            local serialize = require(ffi.string(worker.serialize))
+
             sdl.lockMutex(worker.mutex)
             while worker.isempty == 1 do
                sdl.condWait(worker.notempty, worker.mutex)
@@ -85,6 +89,7 @@ local mt = {
    },
 
    __gc = function(worker)
+             C.free(worker.serialize)
              C.free(worker.callbacks)
              C.free(worker.args)
           end
@@ -92,12 +97,17 @@ local mt = {
 
 local __Worker = ffi.metatype("struct THWorker", mt)
 
-local function Worker(N)
+local function Worker(N, serialize)
+   serialize = serialize or 'threads.serialize'
+
    local worker = __Worker()
    worker.mutex = sdl.createMutex()
    worker.notfull = sdl.createCond()
    worker.notempty = sdl.createCond()
    worker.maxjobs = N
+   worker.serialize = C.malloc(#serialize+1)
+   ffi.copy(worker.serialize, serialize, #serialize)
+   worker.serialize[#serialize] = 0
 
    worker.head = 0
    worker.tail = 0

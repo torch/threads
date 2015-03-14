@@ -2,7 +2,6 @@ local ffi = require 'ffi'
 local sdl = require 'sdl2'
 local Worker = require 'threads.worker'
 local C = ffi.C
-local serialize = require 'threads.serialize'
 
 ffi.cdef[[
 typedef struct lua_State lua_State;
@@ -32,20 +31,32 @@ local function checkL(L, status)
    end
 end
 
+Threads.__serialize = "threads.serialize"
+
+function Threads.serialization(name)
+   if name then
+      assert(type(name) == 'string')
+      Threads.__serialize = name
+   else
+      return Threads.__serialize
+   end
+end
+
 function Threads:__call(N, ...)
    local self = {N=N, endcallbacks={n=0}, errors={}}
    local funcs = {...}
-   
+   local serialize = require(Threads.__serialize)
+
    if #funcs == 0 then
       funcs = {function() end}
    end
-   
+
    local initres = {}
 
    setmetatable(self, {__index=Threads})
 
-   self.mainworker = Worker(N)
-   self.threadworker = Worker(N)
+   self.mainworker = Worker(N, Threads.__serialize)
+   self.threadworker = Worker(N, Threads.__serialize)
 
    self.threads = {}
    for i=1,N do
@@ -57,20 +68,20 @@ function Threads:__call(N, ...)
          local code_p, sz = serialize.save(funcs[j])
          if j < #funcs then
             checkL(L, C.luaL_loadstring(L, string.format([[
-              local serialize = require 'threads.serialize'
+              local serialize = require '%s'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
               code(%d)
-            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i)))
+            ]], Threads.__serialize, tonumber(ffi.cast('intptr_t', code_p)), sz, i)))
          else
             checkL(L, C.luaL_loadstring(L, string.format([[
-              local serialize = require 'threads.serialize'
+              local serialize = require '%s'
               local ffi = require 'ffi'
               local code = serialize.load(ffi.cast('const char*', %d), %d)
               __threadid = %d
               __workerinitres_p, __workerinitres_sz = serialize.save{code(%d)}
               __workerinitres_p = tonumber(ffi.cast('intptr_t', __workerinitres_p))
-            ]], tonumber(ffi.cast('intptr_t', code_p)), sz, i, i)))
+            ]], Threads.__serialize, tonumber(ffi.cast('intptr_t', code_p)), sz, i, i)))
          end
          checkL(L, C.lua_pcall(L, 0, 0, 0) == 0)
       end
