@@ -145,7 +145,6 @@ function Threads:__call(N, ...)
          end
       end
    end
-   self:synchronize()
    self:specific(false)
 
    return self, initres
@@ -171,6 +170,7 @@ function Threads:specific(flag)
             end
          end
          self.__specific = flag
+         self:synchronize() -- finish jobs
       end
    else
       return self.__specific
