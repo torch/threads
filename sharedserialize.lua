@@ -3,77 +3,154 @@ local C = ffi.C
 
 require 'torch'
 
+local status, tds = pcall(require, 'tds')
+
 ffi.cdef[[
 void free(void *ptr);
 void *malloc(size_t size);
 THCharStorage* THCharStorage_newWithData(const char *data, long size);
 void THCharStorage_clearFlag(THCharStorage *storage, const char flag);
+
+void THByteTensor_retain(THByteTensor *self);
+void THCharTensor_retain(THCharTensor *self);
+void THShortTensor_retain(THShortTensor *self);
+void THIntTensor_retain(THIntTensor *self);
+void THLongTensor_retain(THLongTensor *self);
+void THFloatTensor_retain(THFloatTensor *self);
+void THDoubleTensor_retain(THDoubleTensor *self);
+
+void THByteStorage_retain(THByteStorage *self);
+void THCharStorage_retain(THCharStorage *self);
+void THShortStorage_retain(THShortStorage *self);
+void THIntStorage_retain(THIntStorage *self);
+void THLongStorage_retain(THLongStorage *self);
+void THFloatStorage_retain(THFloatStorage *self);
+void THDoubleStorage_retain(THDoubleStorage *self);
 ]]
+
+if torch.CudaTensor then
+   ffi.cdef[[
+void THCudaTensor_retain(THCudaTensor *self);
+void THCudaStorage_retain(THCudaStorage *self);
+]]
+end
 
 local serialize = {}
 
-local tensor = {}
-local tensortypes = {}
+local typenames = {}
 
-for _, name in ipairs{
-   'ByteTensor',
-   'CharTensor',
-   'ShortTensor',
-   'IntTensor',
-   'LongTensor',
-   'CudaTensor',
-   'FloatTensor',
-   'DoubleTensor',
-   'CudaTensor'} do
+-- check if typenames exists
+for _, typename in ipairs{
+   'torch.ByteTensor',
+   'torch.CharTensor',
+   'torch.ShortTensor',
+   'torch.IntTensor',
+   'torch.LongTensor',
+   'torch.CudaTensor',
+   'torch.FloatTensor',
+   'torch.DoubleTensor',
+   'torch.CudaTensor',
+   'torch.ByteStorage',
+   'torch.CharStorage',
+   'torch.ShortStorage',
+   'torch.IntStorage',
+   'torch.LongStorage',
+   'torch.CudaStorage',
+   'torch.FloatStorage',
+   'torch.DoubleStorage',
+   'torch.CudaStorage',
+   'tds_hash'} do
 
-   if torch[name] then
-      table.insert(tensortypes, name)
-      tensor[name] = {
-         read  = torch[name].read,
-         write = torch[name].write
-      }
+   if torch.getmetatable(typename) then
+      typenames[typename] = {}
    end
 
 end
 
-local function tensor_write(self, f)
-   f:writeLong(torch.pointer(self))
-   local p = self:cdata()
-   p.refcount = p.refcount + 1
-end
+if typenames.tds_hash then
+   local mt = typenames.tds_hash
 
-local function tensor_read(self, f)
-   local p = f:readLong()
-   local z = torch.pushudata(p, torch.typename(self))
-   self:set(z)
-end
+   function mt.__factory(f)
+      local self = f:readLong()
+      self = ffi.cast('tds_hash&', self)
+      ffi.gc(self, tds.C.tds_hash_free)
+      return self
+   end
 
-local function sharewrite()
-   for _, name in ipairs(tensortypes) do
-      torch[name].write = tensor_write
+   function mt.__write(self, f)
+      f:writeLong(torch.pointer(self))
+      tds.C.tds_hash_retain(self)
+   end
+
+   function mt.__read(self, f)
    end
 end
 
-local function unsharewrite()
-   for _, name in ipairs(tensortypes) do
-      torch[name].write = tensor[name].write
+for _, typename in ipairs{
+   'torch.ByteTensor',
+   'torch.CharTensor',
+   'torch.ShortTensor',
+   'torch.IntTensor',
+   'torch.LongTensor',
+   'torch.CudaTensor',
+   'torch.FloatTensor',
+   'torch.DoubleTensor',
+   'torch.CudaTensor',
+   'torch.ByteStorage',
+   'torch.CharStorage',
+   'torch.ShortStorage',
+   'torch.IntStorage',
+   'torch.LongStorage',
+   'torch.CudaStorage',
+   'torch.FloatStorage',
+   'torch.DoubleStorage',
+   'torch.CudaStorage'} do
+
+   if typenames[typename] then
+      local mt = typenames[typename]
+      local thname = typename:gsub('torch%.', 'TH')
+      local retain = C[thname .. '_retain']
+
+      function mt.__factory(f)
+         local self = f:readLong()
+         self = torch.pushudata(self, typename)
+         return self
+      end
+
+      function mt.write(self, f)
+         f:writeLong(torch.pointer(self))
+         retain(self:cdata())
+      end
+
+      function mt.read(self, f)
+      end
    end
 end
 
-local function shareread()
-   for _, name in ipairs(tensortypes) do
-      torch[name].read = tensor_read
+local function swapwrite()
+   for typename, mt in pairs(typenames) do
+      local mts = torch.getmetatable(typename)
+      mts.__write, mt.__write = mt.__write, mts.__write
+      mts.write, mt.write = mt.write, mts.write
    end
 end
 
-local function unshareread()
-   for _, name in ipairs(tensortypes) do
-      torch[name].read = tensor[name].read
+local function swapread()
+   for typename, mt in pairs(typenames) do
+      local mts = torch.getmetatable(typename)
+      mts.__factory, mt.__factory = mt.__factory, mts.__factory
+      mts.__read, mt.__read = mt.__read, mts.__read
+      mts.read, mt.read = mt.read, mts.read
    end
 end
 
 function serialize.save(func)
-   sharewrite()
+   local status, msg = pcall(swapwrite)
+   if not status then
+      print(string.format('FATAL THREAD PANIC: (write) %s', msg))
+      os.exit(-1)
+   end
+
    local status, code_p, sz = pcall(
       function()
          local f = torch.MemoryFile()
@@ -88,15 +165,27 @@ function serialize.save(func)
          return code_p, sz
       end
    )
-   unsharewrite()
    if not status then
-      error(code_p)
+      print(string.format('FATAL THREAD PANIC: (write) %s', code_p))
+      os.exit(-1)
    end
+
+   local status, msg = pcall(swapwrite)
+   if not status then
+      print(string.format('FATAL THREAD PANIC: (write) %s', msg))
+      os.exit(-1)
+   end
+
    return code_p, sz
 end
 
 function serialize.load(code_p, sz)
-   shareread()
+   local status, msg = pcall(swapread)
+   if not status then
+      print(string.format('FATAL THREAD PANIC: (read) %s', msg))
+      os.exit(-1)
+   end
+
    local status, func = pcall(
       function()
          local storage_p = C.THCharStorage_newWithData(code_p, sz)
@@ -108,10 +197,17 @@ function serialize.load(code_p, sz)
          return func
       end
    )
-   unshareread()
    if not status then
-      error(func)
+      print(string.format('FATAL THREAD PANIC: (read) %s', func))
+      os.exit(-1)
    end
+
+   local status, msg = pcall(swapread)
+   if not status then
+      print(string.format('FATAL THREAD PANIC: (read) %s', msg))
+      os.exit(-1)
+   end
+
    return func
 end
 
