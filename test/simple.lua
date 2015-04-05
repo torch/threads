@@ -10,7 +10,7 @@ local msg = "hello from a satellite thread"
 
 sdl.init(0)
 
---Threads.serialization('threads.sharedserialize')
+Threads.serialization('threads.sharedserialize')
 
 local x = {}
 local xh = tds.hash()
