@@ -108,4 +108,6 @@ for i=1,njob do
    assert(torch.FloatTensor(ys[i]):sum() == 2*D)
 end
 
+threads:terminate()
+
 print('PASSED')

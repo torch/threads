@@ -20,6 +20,7 @@ struct THWorker {
   int runningjobs;
   int maxjobs;
   char* serialize;
+  int refcount;
 
   struct THCode *callbacks;
   struct THCode *args;
@@ -85,14 +86,33 @@ local mt = {
             sdl.unlockMutex(worker.mutex)
 
             return unpack(res)
-         end
-   },
+         end,
 
-   __gc = function(worker)
-             C.free(worker.serialize)
-             C.free(worker.callbacks)
-             C.free(worker.args)
-          end
+      retain =
+         function(worker)
+            sdl.lockMutex(worker.mutex)
+            worker.refcount = worker.refcount + 1
+            sdl.unlockMutex(worker.mutex)
+         end,
+
+      free =
+         function(worker)
+            sdl.lockMutex(worker.mutex)
+            worker.refcount = worker.refcount - 1
+            sdl.unlockMutex(worker.mutex)
+            if worker.refcount == 0 then
+               C.free(worker.serialize)
+               C.free(worker.callbacks)
+               C.free(worker.args)
+               C.free(worker)
+            end
+         end,
+
+      gc =
+         function(worker)
+            ffi.gc(worker, worker.free)
+         end
+   }
 }
 
 local __Worker = ffi.metatype("struct THWorker", mt)
@@ -100,7 +120,11 @@ local __Worker = ffi.metatype("struct THWorker", mt)
 local function Worker(N, serialize)
    serialize = serialize or 'threads.serialize'
 
-   local worker = __Worker()
+   local worker = ffi.cast('struct THWorker*', C.malloc(ffi.sizeof('struct THWorker')))
+   assert(worker ~= nil, 'could not allocate worker: out of memory')
+   worker:gc()
+
+   worker.refcount = 1
    worker.mutex = sdl.createMutex()
    worker.notfull = sdl.createCond()
    worker.notempty = sdl.createCond()
