@@ -30,7 +30,7 @@ for i=1,njob do
 
       function(id)
          print(string.format("task %d finished (ran on thread ID %x)", i, id))
-         jobdone = jobdone + 1 
+         jobdone = jobdone + 1
       end
    )
 end
