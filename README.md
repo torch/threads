@@ -81,9 +81,10 @@ local threads = Threads(nthread,
 
    -- other callbacks (one is enough in general!) prepare stuff
    -- you need to run your program
-   function(idx)
-      print('starting a new thread/state number:', idx)
+   function(threadIdx)
+      print('starting a new thread/state number ' .. threadIdx)
       gmsg = msg -- we copy here an upvalue of the main thread
+      gidx = threadIdx
    end
 )
 
@@ -95,7 +96,7 @@ for i=1,njob do
       function()
          local id = tonumber(gsdl.threadID())
          -- note that gmsg was intialized in last worker callback
-         print(string.format('%s -- thread ID is %x', gmsg, id))
+         print(string.format('%s %d -- thread ID is %x', gmsg, gidx, id))
 
          -- return a value to the end callback
          return id
@@ -127,30 +128,30 @@ threads:terminate()
 Typical output:
 
 ```sh
-starting a new thread/state
-starting a new thread/state
-starting a new thread/state
-starting a new thread/state
-hello from a satellite thread -- thread ID is cd24000
-hello from a satellite thread -- thread ID is cec8000
-hello from a satellite thread -- thread ID is d06c000
-hello from a satellite thread -- thread ID is cd24000
-task 1 finished (ran on thread ID cd24000)
-hello from a satellite thread -- thread ID is d210000
-task 2 finished (ran on thread ID cec8000)
-task 3 finished (ran on thread ID d06c000)
-task 4 finished (ran on thread ID cd24000)
-task 5 finished (ran on thread ID d210000)
-hello from a satellite thread -- thread ID is cec8000
-hello from a satellite thread -- thread ID is d06c000
-hello from a satellite thread -- thread ID is cd24000
-task 6 finished (ran on thread ID cec8000)
-hello from a satellite thread -- thread ID is d210000
-hello from a satellite thread -- thread ID is cec8000
-task 7 finished (ran on thread ID d06c000)
-task 8 finished (ran on thread ID cd24000)
-task 9 finished (ran on thread ID d210000)
-task 10 finished (ran on thread ID cec8000)
+starting a new thread/state number 1
+starting a new thread/state number 2
+starting a new thread/state number 3
+starting a new thread/state number 4
+hello from a satellite thread 2 -- thread ID is 7f7623fff700
+hello from a satellite thread 1 -- thread ID is 7f7628b00700
+hello from a satellite thread 4 -- thread ID is 7f7622ffd700
+hello from a satellite thread 3 -- thread ID is 7f76237fe700
+task 1 finished (ran on thread ID 7f7623fff700)
+hello from a satellite thread 2 -- thread ID is 7f7623fff700
+task 4 finished (ran on thread ID 7f76237fe700)
+hello from a satellite thread 3 -- thread ID is 7f76237fe700
+hello from a satellite thread 1 -- thread ID is 7f7628b00700
+hello from a satellite thread 4 -- thread ID is 7f7622ffd700
+task 2 finished (ran on thread ID 7f7628b00700)
+hello from a satellite thread 2 -- thread ID is 7f7623fff700
+hello from a satellite thread 1 -- thread ID is 7f7628b00700
+task 3 finished (ran on thread ID 7f7622ffd700)
+task 5 finished (ran on thread ID 7f7623fff700)
+task 7 finished (ran on thread ID 7f7628b00700)
+task 6 finished (ran on thread ID 7f76237fe700)
+task 9 finished (ran on thread ID 7f7623fff700)
+task 8 finished (ran on thread ID 7f7622ffd700)
+task 10 finished (ran on thread ID 7f7628b00700)
 10 jobs done
 ```
 

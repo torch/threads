@@ -13,8 +13,9 @@ local threads = Threads(
       gsdl = require 'sdl2'
    end,
    function(threadIdx)
-      print('starting a new thread/state number:', threadIdx)
+      print('starting a new thread/state number ' .. threadIdx)
       gmsg = msg -- we copy here an upvalue of the main thread
+      gidx = threadIdx
    end
 )
 
@@ -23,7 +24,7 @@ for i=1,njob do
    threads:addjob(
       function()
          local id = tonumber(gsdl.threadID())
-         print(string.format('%s -- thread ID is %x', gmsg, id))
+         print(string.format('%s %d -- thread ID is %x', gmsg, gidx, id))
          return id
       end,
 
