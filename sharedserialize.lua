@@ -1,47 +1,8 @@
-local ffi = require 'ffi'
-
 require 'torch'
 
-local status, tds = pcall(require, 'tds')
-
--- definitions for TH
-local TH = ffi.load(package.searchpath('libtorch', package.cpath))
-
-ffi.cdef[[
-void free(void *ptr);
-void *malloc(size_t size);
-THCharStorage* THCharStorage_newWithData(const char *data, long size);
-void THCharStorage_clearFlag(THCharStorage *storage, const char flag);
-
-void THByteTensor_retain(THByteTensor *self);
-void THCharTensor_retain(THCharTensor *self);
-void THShortTensor_retain(THShortTensor *self);
-void THIntTensor_retain(THIntTensor *self);
-void THLongTensor_retain(THLongTensor *self);
-void THFloatTensor_retain(THFloatTensor *self);
-void THDoubleTensor_retain(THDoubleTensor *self);
-
-void THByteStorage_retain(THByteStorage *self);
-void THCharStorage_retain(THCharStorage *self);
-void THShortStorage_retain(THShortStorage *self);
-void THIntStorage_retain(THIntStorage *self);
-void THLongStorage_retain(THLongStorage *self);
-void THFloatStorage_retain(THFloatStorage *self);
-void THDoubleStorage_retain(THDoubleStorage *self);
-]]
-
--- definitions for THC
-local THC
-if torch.CudaTensor then
-   THC = ffi.load(package.searchpath('libcutorch', package.cpath))
-   ffi.cdef[[
-void THCudaTensor_retain(THCudaTensor *self);
-void THCudaStorage_retain(THCudaStorage *self);
-]]
-end
+local _, tds = pcall(require, 'tds')
 
 local serialize = {}
-
 local typenames = {}
 
 -- check if typenames exists
@@ -73,6 +34,7 @@ for _, typename in ipairs{
 end
 
 if typenames.tds_hash then
+   local ffi = require 'ffi'
    local mt = typenames.tds_hash
 
    function mt.__factory(f)
@@ -113,8 +75,6 @@ for _, typename in ipairs{
 
    if typenames[typename] then
       local mt = typenames[typename]
-      local thname = typename:gsub('torch%.', 'TH')
-      local retain = thname:match('Cuda') and THC[thname .. '_retain'] or TH[thname .. '_retain']
 
       function mt.__factory(f)
          local self = f:readLong()
@@ -124,7 +84,7 @@ for _, typename in ipairs{
 
       function mt.write(self, f)
          f:writeLong(torch.pointer(self))
-         retain(self:cdata())
+         self:retain()
       end
 
       function mt.read(self, f)
@@ -156,22 +116,18 @@ function serialize.save(func)
       os.exit(-1)
    end
 
-   local status, code_p, sz = pcall(
+   local status, storage = pcall(
       function()
          local f = torch.MemoryFile()
          f:binary()
          f:writeObject(func)
          local storage = f:storage()
-         local code_p = storage:data()
-         local sz = storage:size()
-         -- refcounted, but do not free mem
-         TH.THCharStorage_clearFlag(storage:cdata(), 4)
          f:close()
-         return code_p, sz
+         return storage
       end
    )
    if not status then
-      print(string.format('FATAL THREAD PANIC: (write) %s', code_p))
+      print(string.format('FATAL THREAD PANIC: (write) %s', storage))
       os.exit(-1)
    end
 
@@ -181,10 +137,10 @@ function serialize.save(func)
       os.exit(-1)
    end
 
-   return code_p, sz
+   return storage
 end
 
-function serialize.load(code_p, sz)
+function serialize.load(storage)
    local status, msg = pcall(swapread)
    if not status then
       print(string.format('FATAL THREAD PANIC: (read) %s', msg))
@@ -193,8 +149,6 @@ function serialize.load(code_p, sz)
 
    local status, func = pcall(
       function()
-         local storage_p = TH.THCharStorage_newWithData(code_p, sz)
-         local storage = torch.pushudata(storage_p, 'torch.CharStorage')
          local f = torch.MemoryFile(storage)
          f:binary()
          local func = f:readObject()

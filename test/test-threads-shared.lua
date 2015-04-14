@@ -1,23 +1,21 @@
 require 'torch'
 
-local Threads = require 'threads'
-local sdl = require 'sdl2'
-local tds = require 'tds'
+local threads = require 'threads'
+local status, tds = pcall(require, 'tds')
+tds = status and tds or nil
 
 local nthread = 4
 local njob = 10
 local msg = "hello from a satellite thread"
 
-sdl.init(0)
-
-Threads.serialization('threads.sharedserialize')
+threads.Threads.serialization('threads.sharedserialize')
 
 local x = {}
-local xh = tds.hash()
+local xh = tds and tds.hash() or {}
 local xs = {}
-local z = tds.hash()
+local z = tds and tds.hash() or {}
 local D = 10
-local K = 100000 -- good luck in non-shared (30M)
+local K = tds and 100000 or 100  -- good luck in non-shared (30M)
 for i=1,njob do
    x[i] = torch.ones(D)
    xh[i] = torch.ones(D)
@@ -31,10 +29,10 @@ collectgarbage()
 
 print('GO')
 
-local threads = Threads(
+local pool = threads.Threads(
    nthread,
    function(threadIdx)
-      require 'tds'
+      pcall(require, 'tds')
       print('starting a new thread/state number:', threadIdx)
       gmsg = msg -- we copy here an upvalue of the main thread
    end
@@ -42,7 +40,7 @@ local threads = Threads(
 
 local jobdone = 0
 for i=1,njob do
-   threads:addjob(
+   pool:addjob(
       function()
          assert(x[i]:sum() == D)
          assert(xh[i]:sum() == D)
@@ -67,7 +65,7 @@ for i=1,njob do
 end
 
 for i=1,njob do
-   threads:addjob(
+   pool:addjob(
       function()
          collectgarbage()
          collectgarbage()
@@ -75,11 +73,11 @@ for i=1,njob do
    )
 end
 
-threads:synchronize()
+pool:synchronize()
 
 print(string.format('%d jobs done', jobdone))
 
-threads:terminate()
+pool:terminate()
 
 -- did we do the job in shared mode?
 for i=1,njob do
@@ -108,6 +106,6 @@ for i=1,njob do
    assert(torch.FloatTensor(ys[i]):sum() == 2*D)
 end
 
-threads:terminate()
+pool:terminate()
 
 print('PASSED')
