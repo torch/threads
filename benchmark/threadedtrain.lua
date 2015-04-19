@@ -1,7 +1,4 @@
-local ffi = require 'ffi'
 local Threads = require 'threads'
-
-require 'utils'
 
 local function threadedTrain(module, criterion, data, label, params)
 
@@ -20,108 +17,84 @@ local function threadedTrain(module, criterion, data, label, params)
    -- in the end, we normalize ourselves per batch-size
    criterion.sizeAverage = false
 
-   local weight = module:getParameters()
-   local weight_p = tonumber(ffi.cast('intptr_t', weight:data()))
-   local weight_nelem = weight:nElement()
-   local data_p = tonumber(ffi.cast('intptr_t', data:data()))
-   local label_p = tonumber(ffi.cast('intptr_t', label:data()))
+   Threads.serialization('threads.sharedserialize')
+   local threads = Threads(
+      params.threads,
+      function()
+         require 'nn'
+      end,
 
-   local data_size = data:size()
-   local data_nelem = data:nElement()
-   local label_size = label:size()
-   local label_nelem = label:nElement()
+      function()
+         local module = module:clone('weights', 'bias')
+         local weights, dweights = module:parameters()
+         local criterion = criterion:clone()
+         local data = data
+         local label = label
+         local dataset = {}
 
-   local threads, gradweights = Threads(params.threads,
-                           function()
-                              require 'nn'
-                              require 'utils'
-                           end,
-                           
-                           function()
-                              local ffi = require 'ffi'
+         local nex = label:size(1)
 
-                              gmodule = module
-                              gcriterion = criterion
+         if params.batch == 1 then
+            function dataset:size()
+               return nex
+            end
 
-                              sharefloatstorage(gmodule:get(1).weight:storage(), weight_p)
-                              gdatastorage = torch.FloatStorage()
-                              sharefloatstorage(gdatastorage, data_p, data_nelem)
-                              gdata = torch.FloatTensor(gdatastorage, 1, data_size)
+            setmetatable(dataset, {__index =
+                                       function(self, index)
+                                          return {data[index], label[index]}
+                                       end})
+         else
+            assert(nex % params.batch == 0, '# of examples must be divisible with batch size')
+            local batch = params.batch
+            function dataset:size()
+               return nex/batch
+            end
+            setmetatable(dataset, {__index =
+                                       function(self, index)
+                                         return {
+                                            data:narrow(1,(index-1)*batch+1, batch),
+                                            label:narrow(1,(index-1)*batch+1, batch)
+                                         }
+                                       end})
+         end
 
-                              glabelstorage = torch.LongStorage()
-                              sharelongstorage(glabelstorage, label_p, label_nelem)
-                              glabel = torch.LongTensor(glabelstorage, 1, label_size)
+         function gupdate(idx)
+            local ex = dataset[idx]
+            local x, y = ex[1], ex[2]
+            local z = module:forward(x)
+            local err = criterion:forward(z, y)
+            module:zeroGradParameters()
+            module:updateGradInput(x, criterion:updateGradInput(module.output, y))
+            module:accGradParameters(x, criterion.gradInput)
+            return err, dweights
+         end
 
-                              gdataset = {}
+      end
+   )
 
-                              local nex = glabel:size(1)
-
-                              if params.batch == 1 or params.batch == params.threads then
-                                 function gdataset:size()
-                                    return nex
-                                 end
-
-                                 setmetatable(gdataset, {__index = function(self, index)
-                                                                      return {gdata[index], glabel[index]}
-                                                                   end})
-                              else
-                                 assert(nex % params.batch == 0, '# of examples must be divisible with batch size')
-                                 assert(params.batch % params.threads == 0, 'batch size must be divisible threads')
-                                 local n = params.batch/params.threads
-                                 function gdataset:size()
-                                    return nex/n
-                                 end
-                                 setmetatable(gdataset, {__index = function(self, index)
-                                                                      return {gdata:narrow(1,(index-1)*n+1, n),
-                                                                         glabel:narrow(1,(index-1)*n+1, n)}
-                                                                   end})
-                              end
-
-                              function gupdate(idx)
-                                 local ex = gdataset[idx]
-                                 local x, y = ex[1], ex[2]
-                                 
-                                 local z = gmodule:forward(x)
-                                 local err = gcriterion:forward(z, y)
-                                 gmodule:zeroGradParameters()
-                                 gmodule:updateGradInput(x, gcriterion:updateGradInput(gmodule.output, y))
-                                 gmodule:accGradParameters(x, gcriterion.gradInput)
-
-                                 return err
-                              end
-
-                              return tonumber(ffi.cast('intptr_t', gmodule:get(1).gradWeight:data()))
-                           end)
-
-
-   for i=1,params.threads do
-      local gradweight = torch.FloatStorage()
-      sharefloatstorage(gradweight, gradweights[i][1], weight_nelem)
-      gradweights[i] = torch.FloatTensor(gradweight)
-   end
-
+   local weights = module:parameters()
    for iter=1,params.iter do
       local totalerr = 0
-      for b=1,label:size(1)/params.batch do
-         for t=1,params.threads do
-            local idx = (b-1)*params.threads + t
-                              
-            threads:addjob(function(idx)
-                              return gupdate(idx)
-                           end,
+      local idx = 1
+      while idx < label:size(1)/params.batch do
 
-                           function(err)
-                              totalerr = totalerr + err
-                           end,
+         threads:addjob(
+            function(idx)
+               return gupdate(idx)
+            end,
 
-                           idx
-                        )
-         end
-         threads:synchronize()
-         for i=1,params.threads do
-            weight:add(-0.01/params.batch, gradweights[i])
-         end
+            function(err, dweights)
+               totalerr = totalerr + err
+               for i=1,#weights do
+                  weights[i]:add(-0.01, dweights[i])
+               end
+            end,
+            idx
+         )
+
+         idx = idx + 1
       end
+      threads:synchronize()
       print('# current error = ', totalerr/label:size(1))
    end
 
