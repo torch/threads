@@ -20,7 +20,6 @@ static int newthread(void *code_)
   }
   luaL_openlibs(L);
 
-  long addr = (long)code;
   if(luaL_loadstring(L, code)) {
     printf("FATAL THREAD PANIC: (loadstring) %s\n", lua_tolstring(L, -1, NULL));
     free(code);

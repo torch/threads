@@ -26,7 +26,6 @@ typedef struct THQueue_ {
 static int queue_new(lua_State *L)
 {
   THQueue *queue = NULL;
-  THQueue **queue_udata = NULL;
 
   if(lua_gettop(L) == 1) {
 
@@ -180,7 +179,7 @@ static int queue_get_size(lua_State *L)
 
 static int queue__index(lua_State *L)
 {
-  THQueue *queue = luaTHRD_checkudata(L, 1, "threads.Queue");
+  luaTHRD_checkudata(L, 1, "threads.Queue");
   lua_getmetatable(L, 1);
   if(lua_isstring(L, 2)) {
     lua_pushstring(L, "__get");
@@ -295,7 +294,7 @@ static int queue_set_isfull(lua_State *L)
 
 static int queue__newindex(lua_State *L)
 {
-  THQueue *queue = luaTHRD_checkudata(L, 1, "threads.Queue");
+  luaTHRD_checkudata(L, 1, "threads.Queue");
   if(lua_gettop(L) != 3)
     luaL_error(L, "invalid arguments");
 
