@@ -362,16 +362,16 @@ static void queue_init_pkg(lua_State *L)
 {
   if(!luaL_newmetatable(L, "threads.Queue"))
     luaL_error(L, "threads: threads.Queue type already exists");
-  luaT_setfuncs(L, queue__, 0);
+  luaL_setfuncs(L, queue__, 0);
 
   lua_pushstring(L, "__get");
   lua_newtable(L);
-  luaT_setfuncs(L, queue_get__, 0);
+  luaL_setfuncs(L, queue_get__, 0);
   lua_rawset(L, -3);
 
   lua_pushstring(L, "__set");
   lua_newtable(L);
-  luaT_setfuncs(L, queue_set__, 0);
+  luaL_setfuncs(L, queue_set__, 0);
   lua_rawset(L, -3);
 
   lua_pop(L, 1);
