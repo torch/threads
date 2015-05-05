@@ -1,5 +1,6 @@
 local clib = require 'libthreads'
 
+local unpack = unpack or table.unpack
 local Queue = clib.Queue
 
 function Queue:addjob(callback, ...)

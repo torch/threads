@@ -226,7 +226,7 @@ static void thread_init_pkg(lua_State *L)
 {
   if(!luaL_newmetatable(L, "threads.Thread"))
     luaL_error(L, "threads: threads.Thread type already exists");
-  luaL_register(L, NULL, thread__);
+  luaT_setfuncs(L, thread__, 0);
   lua_pushstring(L, "__index");
   lua_pushvalue(L, -2);
   lua_rawset(L, -3);
@@ -234,7 +234,7 @@ static void thread_init_pkg(lua_State *L)
 
   if(!luaL_newmetatable(L, "threads.Mutex"))
     luaL_error(L, "threads: threads.Mutex type already exists");
-  luaL_register(L, NULL, mutex__);
+  luaT_setfuncs(L, mutex__, 0);
   lua_pushstring(L, "__index");
   lua_pushvalue(L, -2);
   lua_rawset(L, -3);
@@ -242,7 +242,7 @@ static void thread_init_pkg(lua_State *L)
 
   if(!luaL_newmetatable(L, "threads.Condition"))
     luaL_error(L, "threads: threads.Condition type already exists");
-  luaL_register(L, NULL, condition__);
+  luaT_setfuncs(L, condition__, 0);
   lua_pushstring(L, "__index");
   lua_pushvalue(L, -2);
   lua_rawset(L, -3);

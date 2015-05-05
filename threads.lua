@@ -1,5 +1,6 @@
 local Queue = require 'threads.queue'
 local clib = require 'libthreads'
+local unpack = unpack or table.unpack
 
 local Threads = {}
 local Threads_ctor = {}
@@ -16,6 +17,12 @@ setmetatable(
 
 Threads.__index = Threads
 Threads.__serialize = "threads.serialize"
+
+-- GC: lua 5.2
+Threads.__gc =
+   function(self)
+      self:terminate()
+   end
 
 function Threads.serialization(name)
    if name then
@@ -83,11 +90,14 @@ function Threads.new(N, ...)
       table.insert(self.threads, thread)
    end
 
-   self.__gc__ = newproxy(true)
-   getmetatable(self.__gc__).__gc =
-      function()
-         self:terminate() -- all the queues must be alive (hence the retains above)
-      end
+   -- GC: lua 5.1
+   if newproxy then
+      self.__gc__ = newproxy(true)
+      getmetatable(self.__gc__).__gc =
+         function()
+            self:terminate() -- all the queues must be alive (hence the retains above)
+         end
+   end
 
    local initres = {}
    for j=1,#funcs do
@@ -209,7 +219,7 @@ function Threads:addjob(...) -- endcallback is passed with returned values of ca
    end
 
    -- now add a new endcallback in the list
-   local endcallbackid = table.getn(endcallbacks)+1
+   local endcallbackid = #endcallbacks+1
    endcallbacks[endcallbackid] = endcallback or function() end
    endcallbacks.n = endcallbacks.n + 1
 
