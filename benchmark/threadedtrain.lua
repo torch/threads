@@ -25,7 +25,7 @@ local function threadedTrain(module, criterion, data, label, params)
       end,
 
       function()
-         local module = module:clone('weights', 'bias')
+         local module = module:clone('weight', 'bias')
          local weights, dweights = module:parameters()
          local criterion = criterion:clone()
          local data = data
