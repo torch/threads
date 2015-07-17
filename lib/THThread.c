@@ -234,6 +234,7 @@ void THCondition_free(THCondition *self)
   if(self) {
     if(THAtomicDecrementRef(&self->refcount)) {
       pthread_cond_destroy(&self->id);
+      free(self);
     }
   }
 }
