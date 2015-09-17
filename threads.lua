@@ -1,6 +1,6 @@
 local Queue = require 'threads.queue'
 local clib = require 'libthreads'
-local unpack = unpack or table.unpack
+local _unpack = unpack or table.unpack
 
 local Threads = {}
 local Threads_ctor = {}
@@ -168,7 +168,9 @@ function Threads:dojob()
    local endcallbacks = self.endcallbacks
    local callstatus, args, endcallbackid, threadid = self.mainqueue:dojob()
    if callstatus then
-      local endcallstatus, msg = pcall(endcallbacks[endcallbackid], unpack(args))
+      local endcallstatus, msg = xpcall(
+        function() endcallbacks[endcallbackid](_unpack(args)) end,
+        debug.traceback)
       if not endcallstatus then
          table.insert(self.errors, string.format('[thread %d endcallback] %s', threadid, msg))
       end
@@ -224,7 +226,14 @@ function Threads:addjob(...) -- endcallback is passed with returned values of ca
    endcallbacks.n = endcallbacks.n + 1
 
    local func = function(...)
-      local res = {pcall(callback, ...)}
+      local args = {...}
+      local res = {
+          xpcall(
+             function() 
+                local _unpack = unpack or table.unpack
+                callback(_unpack(args))
+             end,
+             debug.traceback)}
       local status = table.remove(res, 1)
       return status, res, endcallbackid
    end
