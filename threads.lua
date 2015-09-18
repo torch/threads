@@ -169,7 +169,7 @@ function Threads:dojob()
    local callstatus, args, endcallbackid, threadid = self.mainqueue:dojob()
    if callstatus then
       local endcallstatus, msg = xpcall(
-        function() endcallbacks[endcallbackid](_unpack(args)) end,
+        function() return endcallbacks[endcallbackid](_unpack(args)) end,
         debug.traceback)
       if not endcallstatus then
          table.insert(self.errors, string.format('[thread %d endcallback] %s', threadid, msg))
@@ -231,7 +231,7 @@ function Threads:addjob(...) -- endcallback is passed with returned values of ca
           xpcall(
              function() 
                 local _unpack = unpack or table.unpack
-                callback(_unpack(args))
+                return callback(_unpack(args))
              end,
              debug.traceback)}
       local status = table.remove(res, 1)
