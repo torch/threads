@@ -17,3 +17,12 @@ my_threads:addjob(function()
 ok, res = pcall(my_threads.synchronize, my_threads)
 assert(ok == false)
 assert(res:find("in function 'evil_func'"))
+
+my_threads:addjob(function()
+    return 10
+ end,
+ function(x)
+   assert(x == 10)
+ end)
+
+my_threads:synchronize()
