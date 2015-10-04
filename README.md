@@ -205,11 +205,11 @@ threads.Threads(4,
 )
 ```
 
-Note that the id of each thread is also stored into the global variable `__threadid` (in each thread Lua state).
+Note that the id of each thread is also stored into the global variable `__threadid` (in each thread Lua state).  
 Special notice about upvalues:
-When a child deserialize a callback, all the upvalues in it must be of known types. Since the callbacks in threads.Threads are deserialized in order,  
-we suggest that you make a separated f1 containing all the definitions and put the other code in f2,f3,...
-For example
+When deserializing a callback, upvalues in that callback must be of known types. Since f1,f2,... in [threads.Threads](#threads.Threads) are deserialized in order,  
+we suggest that you make a separated f1 containing all the definitions and put the other code in f2,f3,...  
+e.g.  
 ```
 require 'nn'
 local threads = require 'threads'
