@@ -1,6 +1,10 @@
 #ifndef LUA_THRD_INC
 #define LUA_THRD_INC
 
+#if (LUA_VERSION_NUM == 502)
+#define lua_equal(L, idx1, idx2)  lua_compare(L, (idx1), (idx2), LUA_OPEQ)
+#endif
+
 static int luaTHRD_pushudata(lua_State *L, void *ptr, const char* typename)
 {
   void **udata = lua_newuserdata(L, sizeof(void*));
