@@ -24,7 +24,7 @@ if tds then
    function mt.__read(self, f)
    end
 
-   typenames['tds_hash'] = mt
+   typenames['tds.Hash'] = mt
 end
 
 -- tensor support
