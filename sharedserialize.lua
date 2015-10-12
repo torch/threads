@@ -7,24 +7,38 @@ local typenames = {}
 local _, tds = pcall(require, 'tds') -- for the free/retain functions
 if tds then
    local ffi = require 'ffi'
-   local mt = {}
 
+   -- hash
+   local mt = {}
    function mt.__factory(f)
       local self = f:readLong()
       self = ffi.cast('tds_hash&', self)
       ffi.gc(self, tds.C.tds_hash_free)
       return self
    end
-
    function mt.__write(self, f)
       f:writeLong(torch.pointer(self))
       tds.C.tds_hash_retain(self)
    end
-
    function mt.__read(self, f)
    end
-
    typenames['tds.Hash'] = mt
+
+   -- vec
+   local mt = {}
+   function mt.__factory(f)
+      local self = f:readLong()
+      self = ffi.cast('tds_vec&', self)
+      ffi.gc(self, tds.C.tds_vec_free)
+      return self
+   end
+   function mt.__write(self, f)
+      f:writeLong(torch.pointer(self))
+      tds.C.tds_vec_retain(self)
+   end
+   function mt.__read(self, f)
+   end
+   typenames['tds.Vec'] = mt
 end
 
 -- tensor support
