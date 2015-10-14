@@ -277,7 +277,7 @@ This method will call [synchronize](#threads.synchronize), terminate each queue 
 
 <a name='threads.serialization'/>
 #### Threads.serialization(pkgname) ####
-Specify which serialization scheme which should be used. This function
+Specify which serialization scheme should be used. This function
 should be called (if you want a particular serialization) before calling
 [threads.Threads()](#threads.Threads) constructor.
 
@@ -285,11 +285,11 @@ A serialization package (`pkgname`) should return a table of serialization
 functions when required (`save` and `load`). See
 [serialize specifications](#threads.serialize) for more details.
 
-By default the serialization system uses the `threads.serialize` sub-package, which leverages torch serialization.
+By default the serialization system uses the `'threads.serialize'` sub-package, which leverages torch serialization.
 
-The `threads.sharedserialization` is also provided, which transparently
+The `'threads.sharedserialize'` sub-package is also provided, which transparently
 *shares* the storages, tensors and [tds](http://github.com/torch/tds) C
-data structures. This approach is great if one need to pass large data
+data structures. This approach is great if one needs to pass large data
 structures between threads. See
 [the shared example](test/test-threads-shared.lua) for more details.
 
