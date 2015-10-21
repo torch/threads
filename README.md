@@ -205,7 +205,37 @@ threads.Threads(4,
 )
 ```
 
-Note that the id of each thread is also stored into the global variable `__threadid` (in each thread Lua state).
+Note that the id of each thread is also stored into the global variable `__threadid` (in each thread Lua state).  
+Notice about Upvalues:  
+When deserializing a callback, upvalues must be of known types. Since `f1,f2,...` in [threads.Threads()](#threads.Threads) are deserialized in order, we suggest that you make a separated `f1` containing all the definitions and put the other code in `f2,f3,...`. e.g.  
+```
+require 'nn'
+local threads = require 'threads'
+local model = nn.Linear(5, 10)
+threads.Threads(
+    2,
+    function(idx)                       -- This code will crash
+        require 'nn'                    -- because the upvalue 'model' 
+        local myModel = model:clone()   -- is of unknown type before deserialization
+    end
+)
+```
+
+```
+require 'nn'
+local threads = require 'threads'
+local model = nn.Linear(5, 10)
+threads.Threads(
+    2,
+    function(idx)                      -- This code is OK.
+        require 'nn'
+    end,                               -- child threads know nn.Linear when deserializing f2
+    function(idx)
+        local myModel = model:clone()  -- because f1 has already been executed
+    end
+)
+```
+
 
 <a name='threads.specific'/>
 #### Threads:specific(boolean) ####
