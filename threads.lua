@@ -229,7 +229,7 @@ function Threads:addjob(...) -- endcallback is passed with returned values of ca
       local args = {...}
       local res = {
           xpcall(
-             function() 
+             function()
                 local _unpack = unpack or table.unpack
                 return callback(_unpack(args))
              end,
@@ -270,39 +270,50 @@ function Threads:terminate()
       return
    end
 
-   -- terminate the threads
-   for i=1,self.N do
-      if self:specific() then
-         self:addjob(
+   local function exit()
+
+      -- terminate the threads
+      for i=1,self.N do
+         if self:specific() then
+            self:addjob(
             i,
             function()
                __queue_running = false
             end)
-      else
-         self:addjob(
-            function()
-               __queue_running = false
-            end)
+         else
+            self:addjob(
+               function()
+                  __queue_running = false
+               end)
+         end
       end
+
+      -- terminate all jobs
+      self:synchronize()
+
+      -- wait for threads to exit (and free them)
+      for i=1,self.N do
+         self.threads[i]:free()
+      end
+
+      -- release the queues
+      self.mainqueue:free()
+      self.threadqueue:free()
+      for i=1,self.N do
+         self.threadspecificqueues[i]:free()
+      end
+
    end
 
-   -- terminate all jobs
-   self:synchronize()
-
-   -- wait for threads to exit (and free them)
-   for i=1,self.N do
-      self.threads[i]:free()
-   end
-
-   -- release the queues
-   self.mainqueue:free()
-   self.threadqueue:free()
-   for i=1,self.N do
-      self.threadspecificqueues[i]:free()
-   end
+   -- exit and check for errors
+   local status, err = pcall(exit)
 
    -- make sure you won't run anything
    self.__running = false
+
+   if not status then
+      error(err)
+   end
 end
 
 return Threads_ctor
