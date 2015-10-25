@@ -1,6 +1,8 @@
 Threads
 =======
 
+[![Build Status](https://travis-ci.org/torch/threads.svg)](https://travis-ci.org/torch/threads)
+
 A thread package for Lua and LuaJIT.
 
 The documentation for the _threads_ library is organized as follows
