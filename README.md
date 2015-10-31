@@ -32,7 +32,7 @@ The magic of the *threads* package lies in the seven following points:
 <a name="install"/>
 # Installation #
 
-`threads` relies on [Torch7](torch.ch) for serialization. It uses pthread,
+`threads` relies on [Torch7](http://torch.ch) for serialization. It uses pthread,
 and Windows thread implementation. One could easily get inspired from
 Torch serialization system to adapt the package to its own needs. Torch
 should be straighforward to install, so this dependency should be minor
