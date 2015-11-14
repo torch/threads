@@ -5,6 +5,10 @@ compiler:
 cache:
   directories:
   - $HOME/OpenBlasInstall
+env:
+  - TORCH_LUA_VERSION=LUAJIT21
+  - TORCH_LUA_VERSION=LUA51
+  - TORCH_LUA_VERSION=LUA52
 sudo: false
 addons:
   apt:
@@ -41,10 +45,17 @@ before_script:
 - cd ~/torch && git submodule update --init --recursive
 - mkdir build && cd build
 - export CMAKE_LIBRARY_PATH=$HOME/OpenBlasInstall/include:$HOME/OpenBlasInstall/lib:$CMAKE_LIBRARY_PATH
-- cmake .. -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" -DCMAKE_BUILD_TYPE=Release -DWITH_LUAJIT21=ON
+- cmake .. -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" -DCMAKE_BUILD_TYPE=Release -DWITH_${TORCH_LUA_VERSION}=ON
 - make && make install
 - cd $ROOT_TRAVIS_DIR
 - export LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib:$LD_LIBRARY_PATH
 script: 
 - ${INSTALL_PREFIX}/bin/luarocks make rocks/threads-scm-1.rockspec
-- ${INSTALL_PREFIX}/bin/luajit -lthreads -e "print('threads loaded succesfully')"
+- export PATH=${INSTALL_PREFIX}/bin:$PATH
+- export TESTLUA=$(which luajit lua | head -n 1)
+- ${TESTLUA} -lthreads -e "print('threads loaded succesfully')"
+- cd test
+- ${TESTLUA} test-threads.lua
+- ${TESTLUA} test-threads-async.lua
+- ${TESTLUA} test-threads-shared.lua
+- ${TESTLUA} test-traceback.lua
