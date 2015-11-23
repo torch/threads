@@ -9,3 +9,5 @@ install_manifest.txt
 # Build output
 libthreads.a
 libthreads.so
+libthreadsmain.dylib
+libthreadsmain.so

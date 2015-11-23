@@ -20,8 +20,14 @@ set(luasrc
 )
 
 add_torch_package(threads "${src}" "${luasrc}" "Threads")
-
 target_link_libraries(threads luaT TH)
+
+ADD_LIBRARY(threadsmain MODULE lib/thread-main.c)
+IF(APPLE)
+  SET_TARGET_PROPERTIES(threadsmain PROPERTIES
+    LINK_FLAGS "-undefined dynamic_lookup")
+ENDIF()
+INSTALL(TARGETS threadsmain LIBRARY DESTINATION "${Torch_INSTALL_LIB_SUBDIR}")
 
 if(WIN32)
   add_definitions(-DUSE_WIN_THREADS=1)
