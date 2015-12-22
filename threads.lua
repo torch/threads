@@ -165,11 +165,13 @@ end
 
 function Threads:dojob()
    checkrunning(self)
-   local endcallbacks = self.endcallbacks
    local callstatus, args, endcallbackid, threadid = self.mainqueue:dojob()
+   local endcallback = self.endcallbacks[endcallbackid]
+   self.endcallbacks[endcallbackid] = nil
+   self.endcallbacks.n = self.endcallbacks.n - 1
    if callstatus then
       local endcallstatus, msg = xpcall(
-        function() return endcallbacks[endcallbackid](_unpack(args)) end,
+        function() return endcallback(_unpack(args)) end,
         debug.traceback)
       if not endcallstatus then
          table.insert(self.errors, string.format('[thread %d endcallback] %s', threadid, msg))
@@ -177,8 +179,6 @@ function Threads:dojob()
    else
       table.insert(self.errors, string.format('[thread %d callback] %s', threadid, args[1]))
    end
-   endcallbacks[endcallbackid] = nil
-   endcallbacks.n = endcallbacks.n - 1
 end
 
 function Threads:acceptsjob(idx)

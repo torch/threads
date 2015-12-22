@@ -58,3 +58,4 @@ script:
 - ${TESTLUA} test-threads-async.lua
 - ${TESTLUA} test-threads-shared.lua
 - ${TESTLUA} test-traceback.lua
+- ${TESTLUA} test-threads-coroutine.lua
