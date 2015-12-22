@@ -1,6 +1,3 @@
-#ifndef TH_THREAD_INC
-#define TH_THREAD_INC
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -85,39 +82,32 @@ int pthread_cond_signal(pthread_cond_t *cond)
 #error no thread system available
 #endif
 
-typedef struct THThread_ {
+struct THThread_ {
   pthread_t id;
   int (*func)(void*);
-  void* data;
-  int status;
-} THThread;
+  THThreadState state;
+};
 
-typedef struct THMutex_{
+struct THMutex_{
   pthread_mutex_t id;
   int refcount;
-} THMutex;
+};
 
-typedef struct THCondition_ {
+struct THCondition_ {
   pthread_cond_t id;
   int refcount;
-} THCondition;
+};
 
-static void* thread_closure(void *data)
-{
-  THThread *thread = data;
-  thread->status = thread->func(thread->data);
-  return NULL;
-}
-
-THThread* THThread_new(int (*func)(void*), void *data)
+THThread* THThread_new(void* (*func)(void*), void *data)
 {
   THThread *self = malloc(sizeof(THThread));
-  self->func = func;
-  self->data = data;
-  self->status = 0;
   if(!self)
     return NULL;
-  if(pthread_create(&self->id, NULL, thread_closure, self)) {
+
+  self->state.data = data;
+  self->state.status = 0;
+
+  if(pthread_create(&self->id, NULL, func, &self->state)) {
     free(self);
     return NULL;
   }
@@ -135,7 +125,7 @@ int THThread_free(THThread *self)
   if(self) {
     if(pthread_join(self->id, NULL))
       return 1;
-    status = self->status;
+    status = self->state.status;
     free(self);
   }
   return status;
@@ -238,5 +228,3 @@ void THCondition_free(THCondition *self)
     }
   }
 }
-
-#endif

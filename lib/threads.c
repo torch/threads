@@ -2,40 +2,13 @@
 #include <stdlib.h>
 #include <luaT.h>
 #include <string.h>
+#include <dlfcn.h>
 
 #include "THThread.h"
 #include "luaTHRD.h"
 
 #include <lua.h>
 #include <lualib.h>
-
-static int newthread(void *code_)
-{
-  char *code = code_;
-  lua_State *L = luaL_newstate();
-
-  if(!L) {
-    printf("THREAD FATAL ERROR: could not create lua state\n");
-    return -1;
-  }
-  luaL_openlibs(L);
-
-  if(luaL_loadstring(L, code)) {
-    printf("FATAL THREAD PANIC: (loadstring) %s\n", lua_tolstring(L, -1, NULL));
-    free(code);
-    lua_close(L);
-    return -1;
-  }
-  free(code);
-  if(lua_pcall(L, 0, 0, 0)) {
-    printf("FATAL THREAD PANIC: (pcall) %s\n", lua_tolstring(L, -1, NULL));
-    lua_close(L);
-    return -1;
-  }
-
-  lua_close(L);
-  return 0;
-}
 
 static int thread_new(lua_State *L)
 {
@@ -47,11 +20,25 @@ static int thread_new(lua_State *L)
     luaL_error(L, "threads: out of memory");
   memcpy(code_dup, code, len+1);
 
-  thread = THThread_new(newthread, (void*)code_dup);
-  if(!thread)
-    luaL_error(L, "threads: thread new failed");
-  luaTHRD_pushudata(L, thread, "threads.Thread");
+  void* lib = dlopen("libthreadsmain.so", RTLD_LAZY|RTLD_LOCAL|RTLD_NODELETE);
+  if (!lib) {
+    free(code_dup);
+    luaL_error(L, "threads: dlopen: %s", dlerror());
+  }
 
+  void* (*thread_main)(void*) = dlsym(lib, "THThread_main");
+  if (!thread_main) {
+    free(code_dup);
+    luaL_error(L, "threads: dlsym: %s", dlerror());
+  }
+
+  thread = THThread_new(thread_main, (void*)code_dup);
+  if(!thread) {
+    free(code_dup);
+    luaL_error(L, "threads: thread new failed");
+  }
+
+  luaTHRD_pushudata(L, thread, "threads.Thread");
   return 1;
 }
 

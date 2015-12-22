@@ -4,8 +4,12 @@
 typedef struct THThread_ THThread;
 typedef struct THMutex_ THMutex;
 typedef struct THCondition_ THCondition;
+typedef struct THThreadState_ {
+  void* data;
+  int status;
+} THThreadState;
 
-THThread* THThread_new(int (*closure)(void*), void *data);
+THThread* THThread_new(void* (*closure)(void*), void *data);
 long THThread_id(THThread *self);
 int THThread_free(THThread *self);
 
