@@ -58,7 +58,8 @@ for _, typename in ipairs{
    'torch.LongStorage',
    'torch.FloatStorage',
    'torch.DoubleStorage',
-   'torch.CudaStorage'} do
+   'torch.CudaStorage',
+   'torch.Allocator'} do
 
    local mt = {}
 
@@ -70,7 +71,9 @@ for _, typename in ipairs{
 
    function mt.write(self, f)
       f:writeLong(torch.pointer(self))
-      self:retain()
+      if typename ~= 'torch.Allocator' then
+         self:retain()
+      end
    end
 
    function mt.read(self, f)
@@ -83,6 +86,7 @@ local function swapwrite()
    for typename, mt in pairs(typenames) do
       local mts = torch.getmetatable(typename)
       if mts then
+         mts.__factory, mt.__factory = mt.__factory, mts.__factory
          mts.__write, mt.__write = mt.__write, mts.__write
          mts.write, mt.write = mt.write, mts.write
       end
