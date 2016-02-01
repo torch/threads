@@ -20,7 +20,11 @@ static int thread_new(lua_State *L)
     luaL_error(L, "threads: out of memory");
   memcpy(code_dup, code, len+1);
 
+#ifdef RTLD_NODELETE /* platforms like android dont seem to support this */
   void* lib = dlopen("libthreadsmain.so", RTLD_LAZY|RTLD_LOCAL|RTLD_NODELETE);
+#else
+  void* lib = dlopen("libthreadsmain.so", RTLD_LAZY|RTLD_LOCAL);
+#endif
   if (!lib) {
     free(code_dup);
     luaL_error(L, "threads: dlopen: %s", dlerror());
