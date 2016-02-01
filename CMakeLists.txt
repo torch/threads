@@ -41,3 +41,7 @@ else()
     message(FATAL_ERROR "no threading system (pthread or Win32) available")
   endif()
 endif()
+
+IF(LUALIB)
+  TARGET_LINK_LIBRARIES(threadsmain ${LUALIB})
+ENDIF()
