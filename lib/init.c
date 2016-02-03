@@ -17,6 +17,12 @@ static void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup)
 }
 #endif
 
+#if LUA_VERSION_NUM >= 503
+#define luaL_checklong(L,n)     ((long)luaL_checkinteger(L, (n)))
+#define luaL_checkint(L,n)      ((int)luaL_checkinteger(L, (n)))
+#endif
+
+
 #include "threads.c"
 #include "queue.c"
 
