@@ -1,7 +1,7 @@
 #ifndef LUA_THRD_INC
 #define LUA_THRD_INC
 
-#if (LUA_VERSION_NUM == 502)
+#if (LUA_VERSION_NUM >= 502)
 #define lua_equal(L, idx1, idx2)  lua_compare(L, (idx1), (idx2), LUA_OPEQ)
 #endif
 
