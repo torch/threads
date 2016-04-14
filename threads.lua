@@ -34,7 +34,7 @@ function Threads.serialization(name)
 end
 
 function Threads.new(N, ...)
-   local self = {N=N, endcallbacks={n=0}, errors={}, __specific=true, __running=true}
+   local self = {N=N, endcallbacks={n=0}, errors=false, __specific=true, __running=true}
    local funcs = {...}
    local serialize = require(Threads.__serialize)
 
@@ -165,6 +165,7 @@ end
 
 function Threads:dojob()
    checkrunning(self)
+   self.errors = false
    local callstatus, args, endcallbackid, threadid = self.mainqueue:dojob()
    local endcallback = self.endcallbacks[endcallbackid]
    self.endcallbacks[endcallbackid] = nil
@@ -174,10 +175,12 @@ function Threads:dojob()
         function() return endcallback(_unpack(args)) end,
         debug.traceback)
       if not endcallstatus then
-         table.insert(self.errors, string.format('[thread %d endcallback] %s', threadid, msg))
+         self.errors = true
+         error(string.format('[thread %d endcallback] %s', threadid, msg))
       end
    else
-      table.insert(self.errors, string.format('[thread %d callback] %s', threadid, args[1]))
+      self.errors = true
+      error(string.format('[thread %d callback] %s', threadid, args[1]))
    end
 end
 
@@ -195,7 +198,7 @@ end
 
 function Threads:addjob(...) -- endcallback is passed with returned values of callback
    checkrunning(self)
-   if #self.errors > 0 then self:synchronize() end -- if errors exist, sync immediately.
+   self.errors = false
    local endcallbacks = self.endcallbacks
 
    local idx, threadqueue, r, callback, endcallback
@@ -242,8 +245,9 @@ function Threads:addjob(...) -- endcallback is passed with returned values of ca
 end
 
 function Threads:haserror()
-   checkrunning(self)
-   return (#self.errors > 0)
+   -- DEPRECATED; errors are now propagated immediately
+   -- so the caller doesn't need to explicitly do anything to manage them
+   return false
 end
 
 function Threads:hasjob()
@@ -255,18 +259,14 @@ function Threads:synchronize()
    if not self:isrunning() then
       return
    end
+   self.errors = false
    while self:hasjob()do
       self:dojob()
-   end
-   if self:haserror() then
-      local msg = string.format('\n%s', table.concat(self.errors, '\n'))
-      self.errors = {}
-      error(msg)
    end
 end
 
 function Threads:terminate()
-   if not self:isrunning() then
+   if not self:isrunning() or self.errors then
       return
    end
 

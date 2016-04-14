@@ -290,14 +290,6 @@ If no such job is available, the main thread of execution will wait (i.e. block)
 In general, this method should not be called, except if one wants to use the [async capabilities](#threads.async) of the Threads class.
 Instead, [synchronize()](#threads.synchronize) should be called to make sure all jobs are executed.
 
-Note that `dojob()` will not raise an error in the main thread, if an error
-occurred in one thread. It will however record errors in a
-buffer. [synchronize()](#threads.synchronize) will raise an error
-summarizing all the errors occuring in all threads. If `dojob()` is called
-specifically, it is thus important to check for errors with
-[haserrors()](#threads.haserror'), and call
-[synchronize()](#threads.synchronize) if a problem occurred.
-
 <a name='threads.synchronize'/>
 #### Threads:synchronize() ####
 This method will call [dojob](#threads.dojob) until all `callbacks` and corresponding `endcallbacks` are executed on the queue and main threads, respectively.
@@ -340,16 +332,11 @@ the function will return `true` if the global thread queue is not full,
 
 Returns `true` if there are still some unfinished jobs running, `false` otherwise.
 
-<a name='threads.haserror'/>
-#### Threads.haserror() ####
-
-Returns `true` if an error occurred in one or several threads, `false` otherwise.
-
 <a name='threads.async'/>
 ### Threads asynchronous mode ###
 
 The methods [acceptsjob()](#threads.acceptsjob) and
-[hasjob()](#threads.hasjob) and [haserror()](#threads.haserror) allow you
+[hasjob()](#threads.hasjob) allow you
 to use the `threads.Threads` in an asynchronous manner, without the need of
 calling [synchronize()](#threads.synchronize). See
 [the asynchronous example](test/test-threads-async.lua) for a typical test

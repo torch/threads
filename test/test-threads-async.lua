@@ -37,9 +37,6 @@ local function get()
    -- is there still something to do?
    if pool:hasjob() then
       pool:dojob() -- yes? do it!
-      if pool:haserror() then -- check for errors
-         pool:synchronize() -- finish everything and throw error
-      end
       return result
    end
 
