@@ -27,13 +27,22 @@ if tds then
    -- vec
    local mt = {}
    function mt.__factory(f)
-      local self = f:readLong()
+      local self
+      if ffi.sizeof('long') == 4 then
+         self = f:readDouble()
+      else
+         self = f:readLong()
+      end
       self = ffi.cast('tds_vec&', self)
       ffi.gc(self, tds.C.tds_vec_free)
       return self
    end
    function mt.__write(self, f)
-      f:writeLong(torch.pointer(self))
+      if ffi.sizeof('long') == 4 then
+         f:writeDouble(torch.pointer(self))
+      else
+         f:writeLong(torch.pointer(self))
+      end
       tds.C.tds_vec_retain(self)
    end
    function mt.__read(self, f)
