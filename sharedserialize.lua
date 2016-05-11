@@ -59,6 +59,22 @@ if tds then
    function mt.__read(self, f)
    end
    typenames['tds.Vec'] = mt
+
+   -- atomic
+   local mt = {}
+   function mt.__factory(f)
+      local self = deserializePointer(f)
+      self = ffi.cast('tds_atomic_counter&', self)
+      ffi.gc(self, tds.C.tds_atomic_free)
+      return self
+   end
+   function mt.__write(self, f)
+      serializePointer(self, f)
+      tds.C.tds_atomic_retain(self)
+   end
+   function mt.__read(self, f)
+   end
+   typenames['tds.AtomicCounter'] = mt
 end
 
 -- tensor support
