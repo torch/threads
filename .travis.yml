@@ -59,3 +59,4 @@ script:
 - ${TESTLUA} test-threads-shared.lua
 - ${TESTLUA} test-traceback.lua
 - ${TESTLUA} test-threads-coroutine.lua
+- ${TESTLUA} test-atomic.lua

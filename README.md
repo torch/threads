@@ -134,6 +134,7 @@ The library provides different low-level and high-level threading capabilities.
     * [Thread](#thread): a single thread with no artifice ;
     * [Mutex](#mutex): a thread mutex ;
     * [Condition](#condition): a condition variable.
+    * [Atomic counter](#atomic): lock free atomic counter
 
 Soon some more high-level features will be proposed, built on top of Threads.
 
@@ -474,3 +475,8 @@ Raise the condition signal.
 #### Condition.free() ####
 
 Free given condition.
+
+<a name ='atomic'>
+### Atomic counter ###
+
+`tds.AtomicCounter` has been implemented to be used with `sharedserialize` to provide fast and safe lockless counting of progress (steps) between threads. See [example](test/test-atomic.lua) for usage.
