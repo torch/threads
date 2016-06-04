@@ -180,11 +180,12 @@ Upon receipt of the results, an optional `endcallback` is executed on the main t
 There are no guarantee that all jobs are executed until [Threads:synchronize()](#threads.synchronize) is called.
 
 Each thread has its own
-[lua_State](http://www.lua.org/manual/5.1/manual.html#lua_State). Note that
-with that kind approach, there is no way to share Lua objects between
-threads. However, we provide a [serialization](#threads.serialization)
+[lua_State](http://www.lua.org/manual/5.1/manual.html#lua_State). However, we provide a [serialization](#threads.serialization)
 scheme which allows automatic sharing for several Torch objects (storages,
-tensors and tds.hash).
+tensors and tds types). Sharing of vanilla lua objects is not possible, but instances of classes that support serialization
+(eg. [classic objects](https://github.com/deepmind/classic) with using `require 'classic.torch'` or those created with `torch.class`)
+can be shared, but remember that only the memory in tensor storages and tds objects will be shared by the instances, other fields will be copies.
+Also if synchronization is required that must be implemented by the user (ie. with `mutex`).
 
 
 <a name='threads.Threads'/>
