@@ -18,6 +18,10 @@ typedef HANDLE pthread_t;
 typedef DWORD pthread_attr_t;
 typedef HANDLE pthread_mutex_t;
 typedef HANDLE pthread_cond_t;
+typedef HANDLE pthread_mutexattr_t;
+typedef HANDLE pthread_condattr_t;
+typedef unsigned ( __stdcall *THREAD_FUNCTION )( void * );
+#define restrict __restrict
 
 static int pthread_create(pthread_t *restrict thread,
                           const pthread_attr_t *restrict attr, void *(*start_routine)(void *),
@@ -41,7 +45,7 @@ static int pthread_mutex_init(pthread_mutex_t *restrict mutex,
 
 static int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-  return WaitForSingleObject(*mutex, INFINITE) == 0;
+  return WaitForSingleObject(*mutex, INFINITE) != 0;
 }
 
 static int pthread_mutex_unlock(pthread_mutex_t *mutex)
@@ -65,7 +69,7 @@ static int pthread_cond_wait(pthread_cond_t *restrict cond,
                              pthread_mutex_t *restrict mutex)
 {
   SignalObjectAndWait(*mutex, *cond, INFINITE, FALSE);
-  return WaitForSingleObject(*mutex, INFINITE) == 0;
+  return WaitForSingleObject(*mutex, INFINITE) != 0;
 }
 
 static int pthread_cond_destroy(pthread_cond_t *cond)
@@ -114,9 +118,9 @@ THThread* THThread_new(void* (*func)(void*), void *data)
   return self;
 }
 
-long THThread_id(THThread *self)
+AddressType THThread_id(THThread *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THThread_free(THThread *self)
@@ -144,16 +148,16 @@ THMutex* THMutex_new(void)
   return self;
 }
 
-THMutex* THMutex_newWithId(long id)
+THMutex* THMutex_newWithId(AddressType id)
 {
   THMutex *self = (THMutex*)id;
   THAtomicIncrementRef(&self->refcount);
   return self;
 }
 
-long THMutex_id(THMutex *self)
+AddressType THMutex_id(THMutex *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THMutex_lock(THMutex *self)
@@ -193,16 +197,16 @@ THCondition* THCondition_new(void)
   return self;
 }
 
-THCondition* THCondition_newWithId(long id)
+THCondition* THCondition_newWithId(AddressType id)
 {
   THCondition *self = (THCondition*)id;
   THAtomicIncrementRef(&self->refcount);
   return self;
 }
 
-long THCondition_id(THCondition *self)
+AddressType THCondition_id(THCondition *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THCondition_signal(THCondition *self)

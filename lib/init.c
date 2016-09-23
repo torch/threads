@@ -22,11 +22,16 @@ static void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup)
 #define luaL_checkint(L,n)      ((int)luaL_checkinteger(L, (n)))
 #endif
 
+#define luaL_checkaddr(L,n)     ((AddressType)luaL_checkinteger(L, (n)))
 
 #include "threads.c"
 #include "queue.c"
 
+#if defined(_WIN32)
+__declspec(dllexport) int _cdecl luaopen_libthreads(lua_State *L)
+#else
 int luaopen_libthreads(lua_State *L)
+#endif
 {
   lua_newtable(L);
   thread_init_pkg(L);

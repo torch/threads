@@ -20,10 +20,16 @@ static int thread_new(lua_State *L)
     luaL_error(L, "threads: out of memory");
   memcpy(code_dup, code, len+1);
 
-#ifdef RTLD_NODELETE /* platforms like android dont seem to support this */
-  void* lib = dlopen("libthreadsmain.so", RTLD_LAZY|RTLD_LOCAL|RTLD_NODELETE);
+#ifdef _WIN32
+#define LIBTHREADSMAIN "threadsmain.dll"
 #else
-  void* lib = dlopen("libthreadsmain.so", RTLD_LAZY|RTLD_LOCAL);
+#define LIBTHREADSMAIN "libthreadsmain.so"
+#endif
+
+#ifdef RTLD_NODELETE /* platforms like android dont seem to support this */
+  void* lib = dlopen(LIBTHREADSMAIN, RTLD_LAZY|RTLD_LOCAL|RTLD_NODELETE);
+#else
+  void* lib = dlopen(LIBTHREADSMAIN, RTLD_LAZY|RTLD_LOCAL);
 #endif
   if (!lib) {
     free(code_dup);
@@ -50,7 +56,11 @@ static int thread_tostring(lua_State *L)
 {
   char str[128];
   THThread *thread = luaTHRD_checkudata(L, 1, "threads.Thread");
+#ifndef _WIN64
   snprintf(str, 128, "threads.Thread <%lx>", THThread_id(thread));
+#else
+  snprintf(str, 128, "threads.Thread <%llx>", THThread_id(thread));
+#endif
   lua_pushstring(L, str);
   return 1;
 }
@@ -76,7 +86,7 @@ static int mutex_new(lua_State *L)
     mutex = THMutex_new();
   }
   else if(lua_gettop(L) == 1) {
-    long id = luaL_checklong(L, 1);
+    AddressType id = luaL_checkaddr(L, 1);
     mutex = THMutex_newWithId(id);
   }
   else
@@ -91,7 +101,11 @@ static int mutex_tostring(lua_State *L)
 {
   char str[128];
   THMutex *mutex = luaTHRD_checkudata(L, 1, "threads.Mutex");
+#ifndef _WIN64
   snprintf(str, 128, "threads.Mutex <%lx>", THMutex_id(mutex));
+#else
+  snprintf(str, 128, "threads.Mutex <%llx>", THMutex_id(mutex));
+#endif
   lua_pushstring(L, str);
   return 1;
 }
@@ -133,7 +147,7 @@ static int condition_new(lua_State *L)
     condition = THCondition_new();
   }
   else if(lua_gettop(L) == 1) {
-    long id = luaL_checklong(L, 1);
+    AddressType id = luaL_checkaddr(L, 1);
     condition = THCondition_newWithId(id);
   }
   else
@@ -148,7 +162,11 @@ static int condition_tostring(lua_State *L)
 {
   char str[128];
   THCondition *condition = luaTHRD_checkudata(L, 1, "threads.Condition");
+#ifndef _WIN64
   snprintf(str, 128, "threads.Condition <%lx>", THCondition_id(condition));
+#else
+  snprintf(str, 128, "threads.Condition <%llx>", THCondition_id(condition));
+#endif
   lua_pushstring(L, str);
   return 1;
 }
