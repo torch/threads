@@ -114,9 +114,9 @@ THThread* THThread_new(void* (*func)(void*), void *data)
   return self;
 }
 
-long THThread_id(THThread *self)
+AddressType THThread_id(THThread *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THThread_free(THThread *self)
@@ -144,16 +144,16 @@ THMutex* THMutex_new(void)
   return self;
 }
 
-THMutex* THMutex_newWithId(long id)
+THMutex* THMutex_newWithId(AddressType id)
 {
   THMutex *self = (THMutex*)id;
   THAtomicIncrementRef(&self->refcount);
   return self;
 }
 
-long THMutex_id(THMutex *self)
+AddressType THMutex_id(THMutex *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THMutex_lock(THMutex *self)
@@ -193,16 +193,16 @@ THCondition* THCondition_new(void)
   return self;
 }
 
-THCondition* THCondition_newWithId(long id)
+THCondition* THCondition_newWithId(AddressType id)
 {
   THCondition *self = (THCondition*)id;
   THAtomicIncrementRef(&self->refcount);
   return self;
 }
 
-long THCondition_id(THCondition *self)
+AddressType THCondition_id(THCondition *self)
 {
-  return (long)(self);
+  return (AddressType)self;
 }
 
 int THCondition_signal(THCondition *self)
