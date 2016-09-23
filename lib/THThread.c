@@ -18,6 +18,10 @@ typedef HANDLE pthread_t;
 typedef DWORD pthread_attr_t;
 typedef HANDLE pthread_mutex_t;
 typedef HANDLE pthread_cond_t;
+typedef HANDLE pthread_mutexattr_t;
+typedef HANDLE pthread_condattr_t;
+typedef unsigned ( __stdcall *THREAD_FUNCTION )( void * );
+#define restrict __restrict
 
 static int pthread_create(pthread_t *restrict thread,
                           const pthread_attr_t *restrict attr, void *(*start_routine)(void *),
@@ -41,7 +45,7 @@ static int pthread_mutex_init(pthread_mutex_t *restrict mutex,
 
 static int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
-  return WaitForSingleObject(*mutex, INFINITE) == 0;
+  return WaitForSingleObject(*mutex, INFINITE) != 0;
 }
 
 static int pthread_mutex_unlock(pthread_mutex_t *mutex)
@@ -65,7 +69,7 @@ static int pthread_cond_wait(pthread_cond_t *restrict cond,
                              pthread_mutex_t *restrict mutex)
 {
   SignalObjectAndWait(*mutex, *cond, INFINITE, FALSE);
-  return WaitForSingleObject(*mutex, INFINITE) == 0;
+  return WaitForSingleObject(*mutex, INFINITE) != 0;
 }
 
 static int pthread_cond_destroy(pthread_cond_t *cond)

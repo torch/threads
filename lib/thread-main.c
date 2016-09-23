@@ -35,7 +35,7 @@ static int runthread(void *code_)
 }
 
 #if defined(_WIN32)
-__declspec(dllexport) void* THThread_main(void *arg)
+__declspec(dllexport) void* _cdecl THThread_main(void *arg)
 #else
 void* THThread_main(void *arg)
 #endif

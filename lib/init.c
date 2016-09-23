@@ -28,7 +28,7 @@ static void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup)
 #include "queue.c"
 
 #if defined(_WIN32)
-__declspec(dllexport) int luaopen_libthreads(lua_State *L)
+__declspec(dllexport) int _cdecl luaopen_libthreads(lua_State *L)
 #else
 int luaopen_libthreads(lua_State *L)
 #endif
