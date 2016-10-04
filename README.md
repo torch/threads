@@ -151,7 +151,7 @@ to create higher-level abstractions.
 This class is used to manage a set of queue threads:
 ```lua
 local threads = require 'threads'
-local t = thread.Threads(4) -- create a pool of 4 threads
+local t = threads.Threads(4) -- create a pool of 4 threads
 ```
 
 Note that in the past the `threads` package was providing only one class (`Threads`) and it was possible to do:
