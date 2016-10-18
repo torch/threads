@@ -130,6 +130,7 @@ The library provides different low-level and high-level threading capabilities.
     * [Threads](#threads.main): a thread pool ;
     * [Queue](#queue): a thread-safe task queue ; and
     * [serialize](#threads.serialize): functions for serialization and deserialization.
+    * [safe](#threads.safe): make a function thread-safe.
   * [Low-level](#threads.lowlevel):
     * [Thread](#thread): a single thread with no artifice ;
     * [Mutex](#mutex): a thread mutex ;
@@ -386,6 +387,19 @@ It returns a torch `CharStorage`.
 #### [obj] serialize.load(storage) ####
 This function unserializes the outputs of a [serialize.save](#threads.serialize.save) (a `CharStorage`).
 The unserialized object `obj` is returned.
+
+
+<a name='threads.safe'/>
+### threads.safe(func, [mutex]) ###
+
+The function returns a new thread-safe function which embedds `func` (call
+arguments and returned arguments are the same).  A mutex is created and
+locked before the execution of `func()`, and unlocked after. The mutex is
+destroyed at the garbage collection of `func`.
+
+If needed, one can specify the `mutex` to use as a second optional argument
+to threads.safe(). It is then up to the user to free this mutex when
+needed.
 
 
 <a name='threads.lowlevel'/>

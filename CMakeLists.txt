@@ -17,6 +17,7 @@ set(luasrc
   serialize.lua
   sharedserialize.lua
   queue.lua
+  safe.lua
 )
 
 ADD_LIBRARY(threadsmain MODULE lib/thread-main.c)
