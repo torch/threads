@@ -20,7 +20,8 @@ static int thread_new(lua_State *L)
     luaL_error(L, "threads: out of memory");
   memcpy(code_dup, code, len+1);
 
-#ifdef _WIN32
+#ifdef _MSC_VER
+#define snprintf _snprintf
 #define LIBTHREADSMAIN "threadsmain.dll"
 #else
 #define LIBTHREADSMAIN "libthreadsmain.so"
