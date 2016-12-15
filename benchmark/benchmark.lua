@@ -17,7 +17,8 @@ cmd:option('-convmm', false, 'use "mm" convolution code instead of standard')
 cmd:option('-sub', false, 'use subsampling instead of max pooling')
 cmd:option('-openmp', false, 'use openmp *package*')
 cmd:option('-double', false, 'use doubles instead of floats')
-cmd:option('-cuda', false, 'use CUDA instead of floats')
+cmd:option('-half', false, 'use halves instead of floats')
+cmd:option('-cuda', false, 'use CUDA with specified precision')
 cmd:option('-gi', false, 'compute gradInput')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-dir', '.', 'subdirectory to save the stuff')
@@ -93,19 +94,41 @@ if not params.sub then
                            end
 end
 
-if params.double and params.cuda then
-   error('make your choice between double and cuda!!')
+local function gpuType()
+   if params.double then
+     return 'torch.CudaDoubleTensor'
+   elseif params.half then
+     return 'torch.CudaHalfTensor'
+   else
+     return 'torch.CudaTensor'
+   end
 end
 
-if params.double then
-   torch.setdefaulttensortype('torch.DoubleTensor')
-elseif params.cuda then
+local function cpuType()
+   if params.double then
+     return 'torch.DoubleTensor'
+   elseif params.half then
+     return 'torch.FloatTensor'
+   else
+     return 'torch.FloatTensor'
+   end
+end
+
+if params.double and params.half then
+   error('make your choice between double and half!!')
+end
+
+if params.half and not params.cuda then
+   error('half not supported without cuda')
+end
+
+if params.cuda then
    require 'cunn'
-   dofile('cudahacks.lua')
-   torch.setdefaulttensortype('torch.CudaTensor')
+   --dofile('cudahacks.lua')
+   torch.setdefaulttensortype(gpuType())
    print(  cutorch.getDeviceProperties(cutorch.getDevice()) )
 else
-   torch.setdefaulttensortype('torch.FloatTensor')
+   torch.setdefaulttensortype(cpuType())
 end
 
 local noutput = 10
@@ -145,8 +168,8 @@ if not params.nomlp then
       mlp:add(nn.Linear(ninput, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -161,7 +184,7 @@ if not params.nomlp then
       local criterion = nn.ClassNLLCriterion()
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)
@@ -183,8 +206,8 @@ if not params.nomlp then
       mlp:add(nn.Linear(500, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -199,7 +222,7 @@ if not params.nomlp then
       local criterion = nn.ClassNLLCriterion()  
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)
@@ -226,8 +249,8 @@ if not params.nomlp then
       mlp:add(nn.Linear(1000, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -242,7 +265,7 @@ if not params.nomlp then
       local criterion = nn.ClassNLLCriterion()  
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)
@@ -307,8 +330,8 @@ if not params.nocnn then
       mlp:add(nn.Linear(120, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -323,7 +346,7 @@ if not params.nocnn then
       local criterion = nn.ClassNLLCriterion()  
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)
@@ -355,8 +378,8 @@ if not params.nocnn then
       mlp:add(nn.Linear(120, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -371,7 +394,7 @@ if not params.nocnn then
       local criterion = nn.ClassNLLCriterion()  
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)
@@ -403,8 +426,8 @@ if not params.nocnn then
       mlp:add(nn.Linear(120, noutput))
 
       if params.cuda then
-         mlp:add(nn.Copy('torch.CudaTensor', 'torch.FloatTensor'))
-         torch.setdefaulttensortype('torch.FloatTensor')
+         mlp:add(nn.Copy(gpuType(), cpuType()))
+         torch.setdefaulttensortype(cpuType())
       end
 
       mlp:add(nn.LogSoftMax())
@@ -419,7 +442,7 @@ if not params.nocnn then
       local criterion = nn.ClassNLLCriterion()  
 
       if params.cuda then
-         torch.setdefaulttensortype('torch.CudaTensor')
+         torch.setdefaulttensortype(gpuType())
       end
 
       local trainer = nn.StochasticGradient(mlp, criterion)

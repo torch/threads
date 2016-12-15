@@ -87,6 +87,8 @@ for _, typename in ipairs{
    'torch.FloatTensor',
    'torch.DoubleTensor',
    'torch.CudaTensor',
+   'torch.CudaDoubleTensor',
+   'torch.CudaHalfTensor',
    'torch.ByteStorage',
    'torch.CharStorage',
    'torch.ShortStorage',
@@ -95,6 +97,8 @@ for _, typename in ipairs{
    'torch.FloatStorage',
    'torch.DoubleStorage',
    'torch.CudaStorage',
+   'torch.CudaDoubleStorage',
+   'torch.CudaHalfStorage',
    'torch.Allocator'} do
 
    local mt = {}
