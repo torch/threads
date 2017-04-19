@@ -20,6 +20,20 @@ set(luasrc
   safe.lua
 )
 
+set(CMAKE_REQUIRED_INCLUDES ${LUA_INCDIR})
+include(CheckCSourceCompiles)
+check_c_source_compiles("
+#include <lauxlib.h>
+int main()
+{
+  long i = sizeof(&luaL_setfuncs);
+  return 0;
+}
+" HAS_LUAL_SETFUNCS)
+if(HAS_LUAL_SETFUNCS)
+  add_definitions(-DHAS_LUAL_SETFUNCS)
+endif()
+
 ADD_LIBRARY(threadsmain MODULE lib/thread-main.c)
 IF(APPLE)
   SET_TARGET_PROPERTIES(threadsmain PROPERTIES
