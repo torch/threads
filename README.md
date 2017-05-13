@@ -1,7 +1,7 @@
 Threads
 =======
 
-[![Build Status](https://travis-ci.org/torch/threads.svg)](https://travis-ci.org/torch/threads) 
+[![Build Status](https://travis-ci.org/torch/threads.svg)](https://travis-ci.org/torch/threads)
 
 A thread package for Lua and LuaJIT.
 
@@ -12,6 +12,7 @@ The documentation for the _threads_ library is organized as follows
   * [Library](#library)
 
 <a name="intro"/>
+
 # Introduction #
 
 Why another threading package for Lua, you might wonder?
@@ -30,6 +31,7 @@ The magic of the *threads* package lies in the seven following points:
   * Synchronization between threads is easy.
 
 <a name="install"/>
+
 # Installation #
 
 `threads` relies on [Torch7](http://torch.ch) for serialization. It uses pthread,
@@ -45,6 +47,7 @@ luarocks install threads
 ```
 
 <a name="examples"/>
+
 # Examples #
 
 A  [simple example](test/test-threads.lua) is better than convoluted explanations:
@@ -122,6 +125,7 @@ task 7 finished (ran on thread ID 1)
 See a neural network [threaded training example](benchmark/README.md) for a more advanced usage of `threads`.
 
 <a name="library"/>
+
 # Library #
 
 The library provides different low-level and high-level threading capabilities.
@@ -140,6 +144,7 @@ The library provides different low-level and high-level threading capabilities.
 Soon some more high-level features will be proposed, built on top of Threads.
 
 <a name='threads.midlevel'/>
+
 ## Threads Mid-Level Features
 
 The mid-level feature of the `threads` package is the `threads.Threads()`
@@ -147,6 +152,7 @@ class, built upon low-level features. This class could be easily leveraged
 to create higher-level abstractions.
 
 <a name='threads.main'/>
+
 ### Threads ###
 
 This class is used to manage a set of queue threads:
@@ -190,6 +196,7 @@ Also if synchronization is required that must be implemented by the user (ie. wi
 
 
 <a name='threads.Threads'/>
+
 #### threads.Threads(N,[f1,f2,...]) ####
 
 Argument `N` of this constructor specifies the number of queue threads that
@@ -220,7 +227,7 @@ local model = nn.Linear(5, 10)
 threads.Threads(
     2,
     function(idx)                       -- This code will crash
-        require 'nn'                    -- because the upvalue 'model' 
+        require 'nn'                    -- because the upvalue 'model'
         local myModel = model:clone()   -- is of unknown type before deserialization
     end
 )
@@ -243,6 +250,7 @@ threads.Threads(
 
 
 <a name='threads.specific'/>
+
 #### Threads:specific(boolean) ####
 
 Switch the Threads system into specific (`true`) or non-specific (`false`) mode. In specific mode, one must provide the thread
@@ -252,6 +260,7 @@ will execute the first available job.
 Switching from specific to non-specific, or vice-versa, will first [synchronize](#threads.synchronize) the current running jobs.
 
 <a name='threads.addjob'/>
+
 #### Threads:addjob([id], callback, [endcallback], [...]) ####
 This method is used to queue jobs to be executed by the pool of queue threads.
 
@@ -286,6 +295,7 @@ In this case a value of `1` is received by the main thread as argument `inc` to 
 This demonstrates how communication between threads is easily achieved using the `addjob` method.
 
 <a name='threads.dojob'/>
+
 #### Threads:dojob() ####
 This method is used to tell the main thread to execute the next `endcallback` in the queue (see [Threads:addjob](#threads.addjob)).
 If no such job is available, the main thread of execution will wait (i.e. block) until the `mainthread` Queue (i.e. queue) is filled with a job.
@@ -294,15 +304,18 @@ In general, this method should not be called, except if one wants to use the [as
 Instead, [synchronize()](#threads.synchronize) should be called to make sure all jobs are executed.
 
 <a name='threads.synchronize'/>
+
 #### Threads:synchronize() ####
 This method will call [dojob](#threads.dojob) until all `callbacks` and corresponding `endcallbacks` are executed on the queue and main threads, respectively.
 This method will also raise an error for any errors raised in the pool of queue threads.
 
 <a name='threads.terminate'/>
+
 #### Threads:terminate() ####
 This method will call [synchronize](#threads.synchronize), terminate each queue and free their memory.
 
 <a name='threads.serialization'/>
+
 #### Threads.serialization(pkgname) ####
 Specify which serialization scheme should be used. This function
 should be called (if you want a particular serialization) before calling
@@ -321,6 +334,7 @@ structures between threads. See
 [the shared example](test/test-threads-shared.lua) for more details.
 
 <a name='threads.acceptsjob'/>
+
 #### Threads.acceptsjob([id]) ####
 
 In [specific](#threads.specific) mode, `id` must be a number and the function will return `true` if the corresponding
@@ -331,11 +345,13 @@ the function will return `true` if the global thread queue is not full,
 `false` otherwise.
 
 <a name='threads.hasjob'/>
+
 #### Threads.hasjob() ####
 
 Returns `true` if there are still some unfinished jobs running, `false` otherwise.
 
 <a name='threads.async'/>
+
 ### Threads asynchronous mode ###
 
 The methods [acceptsjob()](#threads.acceptsjob) and
@@ -346,6 +362,7 @@ calling [synchronize()](#threads.synchronize). See
 case.
 
 <a name='queue'/>
+
 ### Queue ###
 This class is in effect a thread-safe task queue. The class is returned upon requiring the sub-package:
 
@@ -357,6 +374,7 @@ Queue = require 'threads.queue'
 The Queue constructor takes a single argument `N` which specifies the maximum size of the queue.
 
 <a name='queue.addjob'/>
+
 #### Queue:addjob(callback, [...]) ####
 This method is called by a thread to *put* a job in the queue.
 The job is specified in the form of a `callback` function taking arguments `...`.
@@ -364,12 +382,14 @@ Both the `callback` function and `...` arguments are serialized before being *pu
 If the queue is full, i.e. it has more than `N` jobs, the calling thread will wait (i.e. block) until a job is retrieved by another thread.
 
 <a name='queue.dojob'/>
+
 #### [res] Queue:dojob() ####
 This method is called by a thread to *get*, unserialize and execute a job inserted via [addjob](#queue.addjob) from the queue.
 A calling thread will wait (i.e. block) until a new job can be retrieved.
 It returns to the calller whatever the job function returns after execution.
 
 <a name='threads.serialize'/>
+
 ### Serialize ###
 A table of serialization functions is returned upon requiring the sub-package:
 
@@ -378,18 +398,21 @@ serialize = require 'threads.serialize'
 ```
 
 <a name='threads.serialize.save'/>
+
 #### [torch.CharStorage] serialize.save(func) ####
 This function serializes function `func`.
 It returns a torch `CharStorage`.
 
 
 <a name='threads.serialize.load'/>
+
 #### [obj] serialize.load(storage) ####
 This function unserializes the outputs of a [serialize.save](#threads.serialize.save) (a `CharStorage`).
 The unserialized object `obj` is returned.
 
 
 <a name='threads.safe'/>
+
 ### threads.safe(func, [mutex]) ###
 
 The function returns a new thread-safe function which embedds `func` (call
@@ -403,6 +426,7 @@ needed.
 
 
 <a name='threads.lowlevel'/>
+
 ## Threads Low-Level Features
 
 Dive-in low-level features with the provided [example](test/test-low-level.lua).
@@ -414,11 +438,13 @@ It is up to the user to manage the event loop (if one is needed) to communicate 
 The class `threads.Threads` is an built upon this class.
 
 <a name='threads.thread'/>
+
 #### threads.Thread(code) ####
 
 Returns a thread id, and execute the code given as a string. The thread must be freed with [free()](#thread.free).
 
 <a name='thread.free'/>
+
 #### Thread:free(thread) ####
 
 Wait for the given thread to finish, and free its resources.
@@ -428,6 +454,7 @@ Wait for the given thread to finish, and free its resources.
 Standard mutex.
 
 <a name='threads.mutex'/>
+
 #### thread.Mutex([id])
 
 Returns a new mutex. If `id` is given, it must be a number returned by
@@ -437,21 +464,25 @@ equivalent to the one uniquely referred by `id`.
 A mutex must be freed with [free()](#mutex.free).
 
 <a name='mutex.lock'/>
+
 #### Mutex:lock() ####
 
 Lock the given mutex. If a thread already locked the mutex, it will block until it has been unlock.
 
 <a name='mutex.unlock'/>
+
 #### Mutex:unlock() ####
 
 Unlock the given mutex. This method call must follow a [lock()](#mutex.lock) call.
 
 <a name='mutex.id'/>
+
 #### Mutex:id() ####
 
 Returns a number unambiguously representing the given mutex.
 
 <a name='mutex.free'/>
+
 #### Mutex:free() ####
 
 Free given mutex.
@@ -461,6 +492,7 @@ Free given mutex.
 Standard condition variable.
 
 <a name='threads.condition'/>
+
 #### thread.Condition([id])
 
 Returns a new condition variable. If `id` is given, it must be a number returned by
@@ -470,11 +502,13 @@ equivalent to the one uniquely referred by `id`.
 A condition must be freed with [free()](#condition.free).
 
 <a name='condition.id'/>
+
 #### Condition:id() ####
 
 Returns a number unambiguously representing the given condition.
 
 <a name='condition.wait'/>
+
 #### Condition:wait(mutex) ####
 
 This function must be preceded by a `mutex:lock()` call.  Assuming the
@@ -482,16 +516,19 @@ mutex is locked, this method unlock it and wait until the condition signal
 has been raised.
 
 <a name='condition.unlock'/>
+
 #### Condition.signal() ####
 
 Raise the condition signal.
 
 <a name='condition.free'/>
+
 #### Condition.free() ####
 
 Free given condition.
 
 <a name ='atomic'>
+
 ### Atomic counter ###
 
 `tds.AtomicCounter` has been implemented to be used with `sharedserialize` to provide fast and safe lockless counting of progress (steps) between threads. See [example](test/test-atomic.lua) for usage.
